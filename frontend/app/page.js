@@ -28,7 +28,7 @@ export default function Home() {
     setGeneratedLetter('');
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/generate', {
+      const response = await fetch('https://ai-cover-letter-backend.onrender.com/api/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
