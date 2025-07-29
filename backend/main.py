@@ -18,7 +18,9 @@ except Exception as e:
     groq_client = None
 
 # --- CORS Middleware ---
-origins = ["http://localhost:3000"]
+origins = ["http://localhost:3000",
+           "https://ai-cover-letter-ethiopia-b88o0sirb-robels-projects-8aff9d51.vercel.app",
+           ]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
