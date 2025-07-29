@@ -10,6 +10,7 @@ export const translations = {
     resultTitle: "Your Generated Cover Letter:",
     copy: "📋 Copy Text",
     copied: "✅ Copied!",
+    download: "📄 Download",
     error: "Failed to generate the cover letter. Please try again.",
     errorFields: "Please fill in both the job description and your information.",
     promptNote: "", // No note needed for English
@@ -25,6 +26,7 @@ export const translations = {
     resultTitle: "የተዘጋጀው የሽፋን ደብዳቤዎ:",
     copy: "📋 ኮፒ ያድርጉ",
     copied: "✅ ኮፒ ሆኗል!",
+    download: "📄 አውርድ",
     error: "የሽፋን ደብዳቤ ለመስራት አልተቻለም። እባክዎ እንደገና ይሞክሩ።",
     errorFields: "እባክዎ የሥራውን ዝርዝር እና የእርስዎን መረጃ ይሙሉ.",
     promptNote: "Please write the cover letter in Amharic.", // Note for the AI
