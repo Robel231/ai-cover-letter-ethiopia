@@ -19,7 +19,7 @@ except Exception as e:
 
 # --- CORS Middleware ---
 origins = ["http://localhost:3000",
-           "https://ai-cover-letter-ethiopia-b88o0sirb-robels-projects-8aff9d51.vercel.app",
+           "https://ai-cover-letter-ethiopia-7chj60zwo-robels-projects-8aff9d51.vercel.app",
            ]
 app.add_middleware(
     CORSMiddleware,
