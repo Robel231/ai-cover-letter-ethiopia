@@ -33,7 +33,8 @@ export default function Home() {
     setGeneratedLetter('');
 
     try {
-      const response = await fetch('https://ai-cover-letter-backend.onrender.com', { // <-- IMPORTANT: Make sure this is your live Render URL
+      // IMPORTANT: Make sure this is your live Render URL
+      const response = await fetch('https://ai-cover-letter-backend.onrender.com/api/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -165,29 +166,29 @@ export default function Home() {
         {generatedLetter && (
           <div className="mt-10">
             <div className="flex justify-between items-center">
-    <h2 className="text-xl font-semibold">{t.resultTitle}</h2>
-    <div className="flex items-center gap-2">
-        {/* Download Button */}
-        <button
-            onClick={handleDownloadPDF}
-            className="px-4 py-2 rounded-md text-sm font-medium transition-colors bg-gray-700 hover:bg-gray-600"
-            title="Download as PDF"
-        >
-            {t.download}
-        </button>
-        {/* Copy Button */}
-        <button
-            onClick={() => {
-                navigator.clipboard.writeText(generatedLetter);
-                setIsCopied(true);
-                setTimeout(() => setIsCopied(false), 2000);
-            }}
-            className="px-4 py-2 rounded-md text-sm font-medium transition-colors bg-gray-700 hover:bg-gray-600"
-        >
-            {isCopied ? t.copied : t.copy}
-        </button>
-    </div>
-</div>
+              <h2 className="text-xl font-semibold">{t.resultTitle}</h2>
+              <div className="flex items-center gap-2">
+                {/* Download Button */}
+                <button
+                  onClick={handleDownloadPDF}
+                  className="px-4 py-2 rounded-md text-sm font-medium transition-colors bg-gray-700 hover:bg-gray-600"
+                  title="Download as PDF"
+                >
+                  {t.download}
+                </button>
+                {/* Copy Button */}
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(generatedLetter);
+                    setIsCopied(true);
+                    setTimeout(() => setIsCopied(false), 2000);
+                  }}
+                  className="px-4 py-2 rounded-md text-sm font-medium transition-colors bg-gray-700 hover:bg-gray-600"
+                >
+                  {isCopied ? t.copied : t.copy}
+                </button>
+              </div>
+            </div>
             <pre ref={letterRef} className="mt-4 whitespace-pre-wrap rounded-md bg-gray-800 p-4 text-gray-300 font-sans text-sm">
               {generatedLetter}
             </pre>
