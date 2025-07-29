@@ -34,16 +34,16 @@ export default function Home() {
 
     try {
       // IMPORTANT: Make sure this is your live Render URL
-      const response = await fetch('https://ai-cover-letter-backend.onrender.com', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetch('https://ai-cover-letter-backend.onrender.com/api/generate', {
+       method: 'POST',
+       headers: {
+         'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          job_description: jobDescription,
-          user_info: `${userInfo}\n\n**Note:** ${t.promptNote}`,
-        }),
-      });
+       job_description: jobDescription,
+       user_info: `${userInfo}\n\n**Note:** ${t.promptNote}`,
+      }),
+   });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
