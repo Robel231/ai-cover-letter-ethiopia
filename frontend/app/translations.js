@@ -13,6 +13,12 @@ export const translations = {
     download: "📄 Download",
     error: "Failed to generate the cover letter. Please try again.",
     errorFields: "Please fill in both the job description and your information.",
+    bioTitle: "LinkedIn Bio Generator",
+    coverLetterTitle: "Cover Letter Generator",
+    bioUserLabel: "1. Enter your skills, experience, or keywords",
+    bioUserPlaceholder: "e.g., Senior Python Developer, 5 years in fintech, expert in FastAPI, passionate about AI...",
+    toneLabel: "2. Select a Tone",
+    generateBioButton: "✨ Generate Bio",
     promptNote: "", // No note needed for English
   },
   am: {
@@ -29,6 +35,12 @@ export const translations = {
     download: "📄 አውርድ",
     error: "የሽፋን ደብዳቤ ለመስራት አልተቻለም። እባክዎ እንደገና ይሞክሩ።",
     errorFields: "እባክዎ የሥራውን ዝርዝር እና የእርስዎን መረጃ ይሙሉ.",
+    bioTitle: "የሊንክድኢን መግለጫ ሰሪ",
+    coverLetterTitle: "የሽፋን ደብዳቤ ሰሪ",
+    bioUserLabel: "1. የእርስዎን ችሎታዎች፣ ልምድ ወይም ቁልፍ ቃላት ያስገቡ",
+    bioUserPlaceholder: "ለምሳሌ ሲኒየር ፓይዘን ዴቨሎፐር፣ በፊንቴክ የ5 ዓመት ልምድ፣ የፋስትኤፒአይ ኤክስፐርት...",
+    toneLabel: "2. የጽሑፉን ስሜት ይምረጡ",
+    generateBioButton: "✨ መግለጫ ይስራ",
     promptNote: "Please write the cover letter in Amharic.", // Note for the AI
   },
 };

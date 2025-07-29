@@ -1,35 +1,84 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { translations } from './translations.js';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 
+// --- Reusable Form Components ---
+
+const CoverLetterForm = ({ t, jobDescription, setJobDescription, userInfo, setUserInfo, handleSubmit, isLoading }) => (
+  <form onSubmit={handleSubmit} className="space-y-6 animate-fade-in">
+    <div>
+      <label htmlFor="job-desc" className="block text-sm font-medium leading-6 text-gray-300">{t.jobLabel}</label>
+      <div className="mt-2">
+        <textarea id="job-desc" rows={8} className="block w-full rounded-md border-0 bg-white/5 p-3 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500" placeholder={t.jobPlaceholder} value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} />
+      </div>
+    </div>
+    <div>
+      <label htmlFor="user-info" className="block text-sm font-medium leading-6 text-gray-300">{t.userLabel}</label>
+      <div className="mt-2">
+        <textarea id="user-info" rows={8} className="block w-full rounded-md border-0 bg-white/5 p-3 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500" placeholder={t.userPlaceholder} value={userInfo} onChange={(e) => setUserInfo(e.target.value)} />
+      </div>
+    </div>
+    <button type="submit" disabled={isLoading} className="flex w-full justify-center rounded-md bg-indigo-500 px-3 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-400 disabled:bg-gray-600 disabled:cursor-not-allowed">
+      {isLoading ? t.buttonLoading : t.buttonText}
+    </button>
+  </form>
+);
+
+const BioForm = ({ t, userInfo, setUserInfo, tone, setTone, handleSubmit, isLoading }) => (
+  <form onSubmit={handleSubmit} className="space-y-6 animate-fade-in">
+    <div>
+      <label htmlFor="bio-user-info" className="block text-sm font-medium leading-6 text-gray-300">{t.bioUserLabel}</label>
+      <div className="mt-2">
+        <textarea id="bio-user-info" rows={8} className="block w-full rounded-md border-0 bg-white/5 p-3 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500" placeholder={t.bioUserPlaceholder} value={userInfo} onChange={(e) => setUserInfo(e.target.value)} />
+      </div>
+    </div>
+    <div>
+      <label htmlFor="tone" className="block text-sm font-medium leading-6 text-gray-300">{t.toneLabel}</label>
+      <select id="tone" value={tone} onChange={(e) => setTone(e.target.value)} className="mt-2 block w-full rounded-md border-0 bg-white/5 py-2.5 pl-3 pr-10 text-white ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500">
+        <option>Professional</option>
+        <option>Casual</option>
+        <option>Enthusiastic</option>
+        <option>Formal</option>
+      </select>
+    </div>
+    <button type="submit" disabled={isLoading} className="flex w-full justify-center rounded-md bg-indigo-500 px-3 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-400 disabled:bg-gray-600 disabled:cursor-not-allowed">
+      {isLoading ? t.buttonLoading : t.generateBioButton}
+    </button>
+  </form>
+);
+
+// --- Main Page Component ---
 export default function Home() {
-  // State variables
+  const [mode, setMode] = useState('coverLetter');
   const [jobDescription, setJobDescription] = useState('');
   const [userInfo, setUserInfo] = useState('');
+  const [tone, setTone] = useState('Professional');
   const [generatedLetter, setGeneratedLetter] = useState('');
+  const [generatedBio, setGeneratedBio] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [isCopied, setIsCopied] = useState(false);
-  const letterRef = useRef(null);
-
-  // Language state
   const [language, setLanguage] = useState('en');
   const t = translations[language];
 
-  const handleSubmit = async (e) => {
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+
+  const resetState = () => {
+    setError('');
+    setGeneratedLetter('');
+    setGeneratedBio('');
+  };
+
+  const handleCoverLetterSubmit = async (e) => {
     e.preventDefault();
     if (!jobDescription || !userInfo) {
       setError(t.errorFields);
       return;
     }
     setIsLoading(true);
-    setError('');
-    setGeneratedLetter('');
+    resetState();
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/generate', {
+      const response = await fetch(`${API_BASE_URL}/api/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -39,12 +88,7 @@ export default function Home() {
       });
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();
-      if (data && data.cover_letter) {
-        setGeneratedLetter(data.cover_letter);
-      } else {
-        console.error("Backend response is missing 'cover_letter' key:", data);
-        setError("Received an invalid response from the server.");
-      }
+      setGeneratedLetter(data.cover_letter);
     } catch (err) {
       setError(t.error);
       console.error(err);
@@ -53,57 +97,29 @@ export default function Home() {
     }
   };
 
-  const handleDownloadPDF = () => {
-    const elementToCapture = letterRef.current;
-
-    if (!elementToCapture) {
-      console.error("Download failed: letter element ref not found.");
+  const handleBioSubmit = async (e) => {
+    e.preventDefault();
+    if (!userInfo) {
+      setError(t.errorFields);
       return;
     }
-
-    console.log("Starting PDF generation for element:", elementToCapture);
-
-    html2canvas(elementToCapture, {
-      allowTaint: true,
-      useCORS: true,
-      scale: 2,
-      backgroundColor: '#1f2937',
-    }).then((canvas) => {
-        console.log("Canvas created successfully.");
-        try {
-          const imgData = canvas.toDataURL('image/png');
-          
-          const a4_width = 595.28;
-          const a4_height = 841.89;
-          
-          const pdf = new jsPDF({
-            orientation: 'portrait',
-            unit: 'pt',
-            format: 'a4'
-          });
-
-          const canvasWidth = canvas.width;
-          const canvasHeight = canvas.height;
-          const canvasAspectRatio = canvasWidth / canvasHeight;
-
-          const margin = 40;
-          const pdfImgWidth = a4_width - margin;
-          const pdfImgHeight = pdfImgWidth / canvasAspectRatio;
-
-          if (pdfImgHeight > a4_height - margin) {
-            console.warn("Content might be too long for a single page.");
-          }
-
-          pdf.addImage(imgData, 'PNG', margin / 2, margin / 2, pdfImgWidth, pdfImgHeight);
-          pdf.save('AI-Cover-Letter.pdf');
-          console.log("PDF save function executed.");
-
-        } catch (error) {
-          console.error("Error during PDF generation (jsPDF part):", error);
-        }
-    }).catch((error) => {
-      console.error("Error during html2canvas operation:", error);
-    });
+    setIsLoading(true);
+    resetState();
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/generate-bio`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_info: userInfo, tone: tone }),
+      });
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json();
+      setGeneratedBio(data.bio);
+    } catch (err) {
+      setError(t.error);
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -126,41 +142,38 @@ export default function Home() {
       </div>
 
       <div className="w-full max-w-5xl">
-        {/* Form Section */}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label htmlFor="job-desc" className="block text-sm font-medium leading-6 text-gray-300">{t.jobLabel}</label>
-            <div className="mt-2"><textarea id="job-desc" name="job-desc" rows={8} className="block w-full rounded-md border-0 bg-white/5 p-3 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500" placeholder={t.jobPlaceholder} value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} /></div>
-          </div>
-          <div>
-            <label htmlFor="user-info" className="block text-sm font-medium leading-6 text-gray-300">{t.userLabel}</label>
-            <div className="mt-2"><textarea id="user-info" name="user-info" rows={8} className="block w-full rounded-md border-0 bg-white/5 p-3 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500" placeholder={t.userPlaceholder} value={userInfo} onChange={(e) => setUserInfo(e.target.value)} /></div>
-          </div>
-          <button type="submit" disabled={isLoading} className="flex w-full justify-center rounded-md bg-indigo-500 px-3 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-400 disabled:bg-gray-600 disabled:cursor-not-allowed">
-            {isLoading ? t.buttonLoading : t.buttonText}
+        {/* Tab Navigation */}
+        <div className="mb-6 flex border-b border-gray-700">
+          <button onClick={() => { setMode('coverLetter'); resetState(); }} className={`py-2 px-4 text-sm font-medium transition-colors ${mode === 'coverLetter' ? 'border-b-2 border-indigo-400 text-white' : 'text-gray-400 hover:text-white'}`}>
+            {t.coverLetterTitle}
           </button>
-        </form>
+          <button onClick={() => { setMode('bio'); resetState(); }} className={`py-2 px-4 text-sm font-medium transition-colors ${mode === 'bio' ? 'border-b-2 border-indigo-400 text-white' : 'text-gray-400 hover:text-white'}`}>
+            {t.bioTitle}
+          </button>
+        </div>
+
+        {/* Conditional Form Rendering */}
+        {mode === 'coverLetter' ? (
+          <CoverLetterForm t={t} jobDescription={jobDescription} setJobDescription={setJobDescription} userInfo={userInfo} setUserInfo={setUserInfo} handleSubmit={handleCoverLetterSubmit} isLoading={isLoading} />
+        ) : (
+          <BioForm t={t} userInfo={userInfo} setUserInfo={setUserInfo} tone={tone} setTone={setTone} handleSubmit={handleBioSubmit} isLoading={isLoading} />
+        )}
 
         {/* Error Message */}
         {error && <div className="mt-4 rounded-md bg-red-900/50 p-3 text-sm text-red-300">{error}</div>}
 
-        {/* --- Result Section --- */}
-        {generatedLetter && (
-          <div className="mt-10">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">{t.resultTitle}</h2>
-              <div className="flex items-center gap-2">
-                <button onClick={handleDownloadPDF} className="px-4 py-2 rounded-md text-sm font-medium transition-colors bg-gray-700 hover:bg-gray-600" title="Download as PDF">{t.download}</button>
-                <button onClick={() => { navigator.clipboard.writeText(generatedLetter); setIsCopied(true); setTimeout(() => setIsCopied(false), 2000); }} className="px-4 py-2 rounded-md text-sm font-medium transition-colors bg-gray-700 hover:bg-gray-600">
-                  {isCopied ? t.copied : t.copy}
-                </button>
-              </div>
-            </div>
-            {/* The ref is attached here */}
-            <pre ref={letterRef} className="whitespace-pre-wrap rounded-md bg-gray-800 p-4 text-gray-300 font-sans text-sm">
-              {generatedLetter}
-            </pre>
-          </div>
+        {/* Conditional Result Display */}
+        {generatedLetter && mode === 'coverLetter' && (
+           <div className="mt-10 animate-fade-in">
+              <h2 className="text-xl font-semibold mb-4">{t.resultTitle}</h2>
+              <pre className="whitespace-pre-wrap rounded-md bg-gray-800 p-4 font-sans text-sm">{generatedLetter}</pre>
+           </div>
+        )}
+        {generatedBio && mode === 'bio' && (
+           <div className="mt-10 animate-fade-in">
+              <h2 className="text-xl font-semibold mb-4">{t.bioTitle}</h2>
+              <pre className="whitespace-pre-wrap rounded-md bg-gray-800 p-4 font-sans text-sm">{generatedBio}</pre>
+           </div>
         )}
       </div>
     </main>

@@ -4,7 +4,7 @@ from groq import Groq
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-
+from models import CoverLetterRequest, BioRequest
 # --- Pydantic Model for Request Body ---
 # It's better to have this in the same file if it's simple
 class CoverLetterRequest(BaseModel):
@@ -106,3 +106,47 @@ def generate_cover_letter(request: CoverLetterRequest):
     except Exception as e:
         print(f"An error occurred during generation: {e}")
         raise HTTPException(status_code=500, detail="Failed to generate cover letter.")
+    
+def create_bio_prompt(user_info: str, tone: str) -> str:
+    """Creates a prompt to generate a LinkedIn bio."""
+    return f"""
+    **Objective:** Write a compelling and professional LinkedIn "About" section summary.
+
+    **Instructions:**
+    1.  **Analyze the User's Information:** Use the provided skills, experiences, and keywords.
+    2.  **Adopt the Right Tone:** The tone should be '{tone}'.
+    3.  **Structure:** Start with a strong opening sentence. In the body, highlight key skills and achievements. End with a forward-looking statement or call to action (e.g., "always open to connecting with fellow professionals").
+    4.  **Format:** Keep it concise, using short paragraphs and maybe 1-2 relevant emojis if the tone isn't strictly formal.
+    5.  **Output:** Generate only the text for the "About" section.
+
+    ---
+    **User's Information (Skills, Experience, Keywords):**
+    {user_info}
+    ---
+
+    **Generated LinkedIn Bio:**
+    """
+
+# And add this new endpoint
+@app.post("/api/generate-bio", tags=["AI Generation"])
+def generate_bio(request: BioRequest):
+    """Receives user data and returns an AI-generated LinkedIn bio."""
+    if not groq_client:
+        raise HTTPException(status_code=500, detail="Groq client not initialized.")
+
+    try:
+        prompt = create_bio_prompt(request.user_info, request.tone)
+
+        chat_completion = groq_client.chat.completions.create(
+            messages=[{"role": "user", "content": prompt}],
+            model="llama3-8b-8192",
+            temperature=0.8, # A little more creative for bios
+            max_tokens=512,
+        )
+
+        generated_bio = chat_completion.choices[0].message.content
+        return {"bio": generated_bio}
+
+    except Exception as e:
+        print(f"An error occurred during bio generation: {e}")
+        raise HTTPException(status_code=500, detail="Failed to generate bio.")    
