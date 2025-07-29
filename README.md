@@ -89,3 +89,7 @@ You can follow the development progress and see the task backlog in [PROGRESS.md
 ## 🤝 Contributing
 
 Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
+## 🚀 Live Demo
+
+You can try the application live at: https://ai-cover-letter-ethiopia-b88o0sirb-robels-projects-8aff9d51.vercel.app/**
+

@@ -11,8 +11,8 @@ This document tracks the tasks for building the AI Cover Letter Generator. It se
 #### To Do
 - [ ] **Frontend:** Add a "Copy to Clipboard" button for the generated letter.
 - [ ] **Frontend:** Implement the Amharic/English UI switch (basic implementation).
-- [ ] **Deployment:** Deploy the backend to Render.
-- [ ] **Deployment:** Deploy the frontend to Vercel and connect it to the live backend.
+- [x] **Deployment:** Deploy the backend to Render.
+- [x] **Deployment:** Deploy the frontend to Vercel and connect it to the live backend.
 
 #### In Progress
 - [ ] ...
