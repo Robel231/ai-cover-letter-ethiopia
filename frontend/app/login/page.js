@@ -52,7 +52,7 @@ export default function LoginPage() {
                 {error && <p className="text-red-400 text-center">{error}</p>}
                 {/* --- THIS IS THE FIXED LINE --- */}
                 <p className="text-center text-sm">
-                    Don't have an account?{' '}
+                    Don&apos;t have an account?{' '}
                     <Link href="/signup" className="font-medium text-indigo-400 hover:text-indigo-300">Sign up</Link>
                 </p>
             </div>
