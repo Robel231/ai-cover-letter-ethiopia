@@ -1,5 +1,6 @@
 import os
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Response
+from fpdf import FPDF
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select
 from typing import List
@@ -165,3 +166,41 @@ def delete_content(
     session.delete(content_item)
     session.commit()
     return
+
+@app.get("/api/content/{content_id}/download-pdf", tags=["Content"])
+def download_pdf(
+    content_id: UUID,
+    session: Session = Depends(get_session),
+    current_user_email: str = Depends(get_current_user_email)
+):
+    print(f"Attempting to download PDF for content ID: {content_id}")
+    user = session.exec(select(User).where(User.email == current_user_email)).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    content_item = session.get(GeneratedContent, content_id)
+    if not content_item:
+        raise HTTPException(status_code=404, detail="Content not found")
+
+    if content_item.user_id != user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to access this content")
+
+    try:
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 16)
+        pdf.cell(0, 10, content_item.title, ln=True, align='C')
+        pdf.ln(10)
+
+        pdf.set_font("Arial", "", 12)
+        pdf.multi_cell(0, 5, content_item.content)
+
+        pdf_output = pdf.output(dest='S')
+
+        return Response(
+            content=pdf_output,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename='{content_item.title}.pdf'"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"PDF generation failed: {str(e)}")

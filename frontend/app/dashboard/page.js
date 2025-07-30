@@ -14,10 +14,12 @@ const Icon = ({ type }) => {
 };
 
 // --- Modal Component for Viewing/Editing ---
-const ContentModal = ({ item, onClose, onSave, onDelete }) => {
+const ContentModal = ({ item, onClose, onSave, onDelete, onDownloadPdf }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [editedTitle, setEditedTitle] = useState(item.title);
     const [isCopied, setIsCopied] = useState(false);
+    const [isDownloading, setIsDownloading] = useState(false);
+    const [downloadError, setDownloadError] = useState('');
 
     const handleSave = () => {
         onSave(item.id, editedTitle);
@@ -28,6 +30,18 @@ const ContentModal = ({ item, onClose, onSave, onDelete }) => {
         navigator.clipboard.writeText(item.content);
         setIsCopied(true);
         setTimeout(() => setIsCopied(false), 2000);
+    };
+
+    const handleDownload = async () => {
+        setIsDownloading(true);
+        setDownloadError('');
+        try {
+            await onDownloadPdf(item.id, item.title);
+        } catch (error) {
+            setDownloadError('Download failed.');
+        } finally {
+            setIsDownloading(false);
+        }
     };
 
     return (
@@ -62,8 +76,12 @@ const ContentModal = ({ item, onClose, onSave, onDelete }) => {
                             <button onClick={() => setIsEditing(true)} className="bg-gray-600 hover:bg-gray-500 px-4 py-2 rounded-md text-sm">Edit Title</button>
                         )}
                         <button onClick={handleCopy} className="bg-gray-600 hover:bg-gray-500 px-4 py-2 rounded-md text-sm">{isCopied ? 'Copied!' : 'Copy Text'}</button>
+                        <button onClick={handleDownload} disabled={isDownloading} className="bg-green-600 hover:bg-green-500 px-4 py-2 rounded-md text-sm disabled:bg-gray-500">
+                            {isDownloading ? 'Downloading...' : 'Download PDF'}
+                        </button>
                     </div>
                 </div>
+                {downloadError && <p className="text-red-400 text-center pb-4">{downloadError}</p>}
             </div>
         </div>
     );
@@ -145,6 +163,38 @@ export default function DashboardPage() {
             setSelectedItem(updatedItem); // Update modal content
         } catch (err) {
             setError(err.message);
+        }
+    };
+
+    const handleDownloadPdf = async (contentId, title) => {
+        console.log('Attempting PDF download...');
+        console.log('API Base URL:', API_BASE_URL);
+        console.log('Auth Token present:', !!token); // Check if token exists
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/content/${contentId}/download-pdf`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!response.ok) {
+                throw new Error("Failed to download PDF.");
+            }
+            const blob = await response.blob();
+            if (response.headers.get('content-type') === 'application/json') {
+                // If the response is JSON, it means an error occurred on the backend
+                const errorData = JSON.parse(await blob.text());
+                throw new Error(errorData.detail || 'Failed to download PDF due to a server error.');
+            }
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${title}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url); // Clean up the URL object
+        } catch (err) {
+            console.error("Download PDF error:", err);
+            // Set the error state in the modal component
+            throw err; // Re-throw to be caught by the modal's handleDownload
         }
     };
 
@@ -240,6 +290,7 @@ export default function DashboardPage() {
                     onClose={() => setSelectedItem(null)}
                     onSave={handleSaveTitle}
                     onDelete={handleDelete}
+                    onDownloadPdf={handleDownloadPdf}
                 />
             )}
         </div>
