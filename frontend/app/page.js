@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import Navbar from '@/components/Navbar';
+import LandingPage from '@/components/LandingPage';
 import Link from 'next/link';
 import { translations } from './translations.js';
 
@@ -51,7 +52,6 @@ const BioForm = ({ t, userInfo, setUserInfo, tone, setTone, handleSubmit, isLoad
   </form>
 );
 
-
 // --- Main Page Component ---
 export default function Home() {
     const { isLoggedIn, token } = useAuth();
@@ -65,11 +65,7 @@ export default function Home() {
     const [error, setError] = useState('');
     const [saveSuccess, setSaveSuccess] = useState('');
 
-    // For simplicity, we get the translations object but also provide fallbacks in the JSX
-    // This is to prevent errors if translations.js is ever out of sync
-    const [language, setLanguage] = useState('en');
-    const t = translations[language] || {};
-
+    const t = translations['en'] || {};
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
     const resetState = () => {
@@ -78,7 +74,7 @@ export default function Home() {
         setGeneratedBio('');
         setSaveSuccess('');
     };
-    
+
     const makeAuthenticatedRequest = async (endpoint, body) => {
         if (!token) {
             setError("You must be logged in to do that.");
@@ -86,19 +82,14 @@ export default function Home() {
         }
         const response = await fetch(`${API_BASE_URL}${endpoint}`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify(body),
         });
         const data = await response.json();
-        if (!response.ok) {
-            throw new Error(data.detail || "An API error occurred.");
-        }
+        if (!response.ok) throw new Error(data.detail || "An API error occurred.");
         return data;
     };
-    
+
     const handleCoverLetterSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
@@ -136,7 +127,6 @@ export default function Home() {
     const handleSaveContent = async () => {
         const contentToSave = mode === 'coverLetter' ? generatedLetter : generatedBio;
         const title = mode === 'coverLetter' ? `Cover Letter for ${jobDescription.substring(0, 30)}...` : `LinkedIn Bio (${new Date().toLocaleDateString()})`;
-        
         setSaveSuccess('');
         setError('');
         try {
@@ -154,19 +144,10 @@ export default function Home() {
     return (
         <div className="flex flex-col min-h-screen bg-gray-900 text-white">
             <Navbar />
-            <main className="flex-grow pt-24 px-4 sm:px-6 lg:px-8 flex flex-col items-center">
-                {!isLoggedIn ? (
-                    <div className="text-center bg-gray-800 p-8 rounded-lg shadow-lg mt-10">
-                        <h1 className="text-3xl font-bold mb-4">Welcome to AI Job Tools</h1>
-                        <p className="text-lg text-gray-300 mb-6">Please log in or sign up to use the generators and save your work.</p>
-                        <div className="space-x-4">
-                            <Link href="/login" className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-md">Login</Link>
-                            <Link href="/signup" className="px-6 py-2 bg-gray-600 hover:bg-gray-500 rounded-md">Sign Up</Link>
-                        </div>
-                    </div>
-                ) : (
-                    <div className="w-full max-w-5xl">
-                        {/* Tab Navigation */}
+            <main className="flex-grow pt-16 px-4 sm:px-6 lg:px-8 flex flex-col items-center">
+                {isLoggedIn ? (
+                    // --- LOGGED-IN VIEW ---
+                    <div className="w-full max-w-5xl mt-8">
                         <div className="mb-6 flex border-b border-gray-700">
                             <button onClick={() => { setMode('coverLetter'); resetState(); }} className={`py-2 px-4 text-sm font-medium transition-colors ${mode === 'coverLetter' ? 'border-b-2 border-indigo-400 text-white' : 'text-gray-400 hover:text-white'}`}>
                                 {t.coverLetterTitle || 'Cover Letter Generator'}
@@ -175,35 +156,22 @@ export default function Home() {
                                 {t.bioTitle || 'LinkedIn Bio Generator'}
                             </button>
                         </div>
-
-                        {/* Conditional Form Rendering */}
-                        {mode === 'coverLetter' ? (
-                            <CoverLetterForm t={t} jobDescription={jobDescription} setJobDescription={setJobDescription} userInfo={userInfo} setUserInfo={setUserInfo} handleSubmit={handleCoverLetterSubmit} isLoading={isLoading} />
-                        ) : (
-                            <BioForm t={t} userInfo={userInfo} setUserInfo={setUserInfo} tone={tone} setTone={setTone} handleSubmit={handleBioSubmit} isLoading={isLoading} />
-                        )}
-
-                        {/* Error/Success Messages */}
+                        {mode === 'coverLetter' ? <CoverLetterForm t={t} jobDescription={jobDescription} setJobDescription={setJobDescription} userInfo={userInfo} setUserInfo={setUserInfo} handleSubmit={handleCoverLetterSubmit} isLoading={isLoading} /> : <BioForm t={t} userInfo={userInfo} setUserInfo={setUserInfo} tone={tone} setTone={setTone} handleSubmit={handleBioSubmit} isLoading={isLoading} />}
                         {error && <div className="mt-4 rounded-md bg-red-900/50 p-3 text-sm text-red-300">{error}</div>}
                         {saveSuccess && <div className="mt-4 rounded-md bg-green-900/50 p-3 text-sm text-green-300">{saveSuccess}</div>}
-
-                        {/* Conditional Result Display */}
                         {(generatedLetter || generatedBio) && (
                             <div className="mt-10 animate-fade-in">
                                 <div className="flex justify-between items-center mb-4">
-                                    <h2 className="text-xl font-semibold">
-                                        {mode === 'coverLetter' ? (t.resultTitle || 'Generated Cover Letter') : (t.bioTitle || 'Generated Bio')}
-                                    </h2>
-                                    <button onClick={handleSaveContent} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-md text-sm font-medium">
-                                        💾 Save
-                                    </button>
+                                    <h2 className="text-xl font-semibold">{mode === 'coverLetter' ? 'Generated Cover Letter' : 'Generated Bio'}</h2>
+                                    <button onClick={handleSaveContent} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-md text-sm font-medium">💾 Save</button>
                                 </div>
-                                <pre className="whitespace-pre-wrap rounded-md bg-gray-800 p-4 font-sans text-sm">
-                                    {mode === 'coverLetter' ? generatedLetter : generatedBio}
-                                </pre>
+                                <pre className="whitespace-pre-wrap rounded-md bg-gray-800 p-4 font-sans text-sm">{mode === 'coverLetter' ? generatedLetter : generatedBio}</pre>
                             </div>
                         )}
                     </div>
+                ) : (
+                    // --- LOGGED-OUT VIEW ---
+                    <LandingPage />
                 )}
             </main>
         </div>
