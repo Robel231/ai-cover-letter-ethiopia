@@ -1,10 +1,14 @@
 import os
+import logging
 from fastapi import FastAPI, HTTPException, Depends, Response
 from fpdf import FPDF
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select
 from typing import List
 from uuid import UUID
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
 
 # --- Local Imports ---
 from database import get_session
@@ -170,18 +174,22 @@ def delete_content(
 @app.get("/api/content/{content_id}/download-pdf", tags=["Content"])
 def download_pdf(
     content_id: UUID,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user_email: str = Depends(get_current_user_email)
 ):
-    print(f"Attempting to download PDF for content ID: {content_id}")
+    logging.info(f"Attempting to download PDF for content ID: {content_id} by user: {current_user_email}")
     user = session.exec(select(User).where(User.email == current_user_email)).first()
     if not user:
+        logging.warning(f"User {current_user_email} not found for content ID: {content_id}")
         raise HTTPException(status_code=404, detail="User not found")
 
     content_item = session.get(GeneratedContent, content_id)
     if not content_item:
+        logging.warning(f"Content item {content_id} not found for user {current_user_email}")
         raise HTTPException(status_code=404, detail="Content not found")
 
     if content_item.user_id != user.id:
+        logging.warning(f"User {current_user_email} not authorized to access content {content_id} (owner: {content_item.user_id})")
         raise HTTPException(status_code=403, detail="Not authorized to access this content")
 
     try:
@@ -196,10 +204,12 @@ def download_pdf(
 
         pdf_output = pdf.output(dest='S')
 
+        logging.info(f"Successfully generated PDF for content ID: {content_id}")
         return Response(
             content=pdf_output,
             media_type="application/pdf",
             headers={"Content-Disposition": f"attachment; filename='{content_item.title}.pdf'"}
         )
     except Exception as e:
+        logging.exception(f"PDF generation failed for content ID: {content_id}")
         raise HTTPException(status_code=500, detail=f"PDF generation failed: {str(e)}")
