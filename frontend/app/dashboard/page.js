@@ -110,7 +110,7 @@ export default function DashboardPage() {
             }
         };
         fetchContent();
-    }, [isLoggedIn, token, router, logout]);
+    }, [isLoggedIn, token, router, logout, API_BASE_URL]);
 
     // --- CRUD Handlers ---
     const handleDelete = async (contentId) => {
