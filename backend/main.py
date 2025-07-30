@@ -170,8 +170,7 @@ def delete_content(
 @app.get("/api/content/{content_id}/download-pdf", tags=["Content"])
 def download_pdf(
     content_id: UUID,
-    session: Session = Depends(get_session),
-    current_user_email: str = Depends(get_current_user_email)
+    session: Session = Depends(get_session)
 ):
     print(f"Attempting to download PDF for content ID: {content_id}")
     user = session.exec(select(User).where(User.email == current_user_email)).first()
