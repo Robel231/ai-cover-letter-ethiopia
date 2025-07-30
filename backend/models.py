@@ -7,12 +7,16 @@ from pydantic import BaseModel
 # --- Database Models (interact with the DB) ---
 
 class User(SQLModel, table=True):
+    __tablename__ = "users"  # <-- ADD THIS LINE
+
     id: Optional[UUID] = Field(default_factory=uuid4, primary_key=True)
     email: str = Field(unique=True, index=True)
     hashed_password: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 class GeneratedContent(SQLModel, table=True):
+    __tablename__ = "generated_content"
+    
     id: Optional[UUID] = Field(default_factory=uuid4, primary_key=True)
     user_id: UUID = Field(foreign_key="user.id")
     content_type: str # 'cover_letter' or 'bio'
