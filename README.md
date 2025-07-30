@@ -64,7 +64,7 @@ Follow these instructions to get the project running on your local machine.
     npm install
     cp .env.local.example .env.local
     ```
-    Update `.env.local` with the URL of your backend server (e.g., `NEXT_PUBLIC_API_URL=http://127.0.0.1:8000`).
+    Update `.env.local` with the URL of your backend server (e.g., `NEXT_PUBLIC_API_URL=https://ai-cover-letter-backend.onrender.com`).
 
 ### Running the Application
 
@@ -73,7 +73,7 @@ Follow these instructions to get the project running on your local machine.
     # From the /backend directory
     uvicorn main:app --reload
     ```
-    The backend will be running at `http://127.0.0.1:8000`.
+    The backend will be running at `https://ai-cover-letter-backend.onrender.com`.
 
 2.  **Start the Frontend Development Server:**
     ```sh

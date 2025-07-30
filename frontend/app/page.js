@@ -66,7 +66,7 @@ export default function Home() {
     const [saveSuccess, setSaveSuccess] = useState('');
 
     const t = translations['en'] || {};
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ai-cover-letter-backend.onrender.com';
 
     const resetState = () => {
         setError('');

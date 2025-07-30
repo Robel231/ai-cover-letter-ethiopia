@@ -101,7 +101,7 @@ export default function DashboardPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState('newest');
 
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ai-cover-letter-backend.onrender.com';
 
     // Fetching Data
     useEffect(() => {

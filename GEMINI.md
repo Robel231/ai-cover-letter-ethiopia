@@ -74,6 +74,6 @@ The project is organized into a monorepo with two main directories:
 2.  Install dependencies: `npm install`
 3.  Create a `.env.local` file and add the following environment variable:
     ```
-    NEXT_PUBLIC_API_URL="http://127.0.0.1:8000"
+    NEXT_PUBLIC_API_URL="https://ai-cover-letter-backend.onrender.com"
     ```
 4.  Run the development server: `npm run dev`

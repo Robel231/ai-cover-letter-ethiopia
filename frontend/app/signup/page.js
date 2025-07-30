@@ -11,7 +11,7 @@ export default function SignupPage() {
     const [success, setSuccess] = useState('');
     const router = useRouter();
     
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ai-cover-letter-backend.onrender.com';
 
     const handleSubmit = async (e) => {
         e.preventDefault();

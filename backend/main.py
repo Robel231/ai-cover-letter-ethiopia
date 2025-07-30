@@ -211,7 +211,7 @@ def download_pdf(
 
         logging.info(f"Successfully generated PDF for content ID: {content_id}")
         return Response(
-            content=pdf_output,
+            content=bytes(pdf_output),
             media_type="application/pdf",
             headers={"Content-Disposition": f"attachment; filename='{content_item.title}.pdf'"}
         )
