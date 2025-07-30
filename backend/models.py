@@ -58,3 +58,7 @@ class GeneratedContentResponse(BaseModel):
     title: str
     content: str
     created_at: datetime
+
+# THIS IS THE MISSING PIECE
+class ContentUpdate(BaseModel):
+    title: str

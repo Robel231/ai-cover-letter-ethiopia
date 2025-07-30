@@ -3,12 +3,13 @@ from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select
 from typing import List
+from uuid import UUID
 
 # --- Local Imports ---
 from database import get_session
 from models import (
     User, UserCreate, UserLogin,
-    CoverLetterRequest, BioRequest,
+    CoverLetterRequest, BioRequest, ContentUpdate,
     GeneratedContent, GeneratedContentCreate, GeneratedContentResponse
 )
 from security import (
@@ -120,3 +121,47 @@ def get_user_content(session: Session = Depends(get_session), current_user_email
     statement = select(GeneratedContent).where(GeneratedContent.user_id == user.id).order_by(GeneratedContent.created_at.desc())
     content_list = session.exec(statement).all()
     return content_list
+
+@app.patch("/api/content/{content_id}", response_model=GeneratedContentResponse, tags=["Content"])
+def update_content_title(
+    content_id: UUID,
+    content_update: ContentUpdate,
+    session: Session = Depends(get_session),
+    current_user_email: str = Depends(get_current_user_email)
+):
+    user = session.exec(select(User).where(User.email == current_user_email)).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    content_item = session.get(GeneratedContent, content_id)
+    if not content_item:
+        raise HTTPException(status_code=404, detail="Content not found")
+    if content_item.user_id != user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to edit this content")
+
+    content_item.title = content_update.title
+    session.add(content_item)
+    session.commit()
+    session.refresh(content_item)
+    return content_item
+
+@app.delete("/api/content/{content_id}", status_code=204, tags=["Content"])
+def delete_content(
+    content_id: UUID,
+    session: Session = Depends(get_session),
+    current_user_email: str = Depends(get_current_user_email)
+):
+    user = session.exec(select(User).where(User.email == current_user_email)).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    content_item = session.get(GeneratedContent, content_id)
+    if not content_item:
+        return # Item already gone, so the goal is achieved.
+
+    if content_item.user_id != user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this content")
+
+    session.delete(content_item)
+    session.commit()
+    return
