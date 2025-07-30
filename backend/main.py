@@ -195,11 +195,12 @@ def download_pdf(
     try:
         pdf = FPDF()
         pdf.add_page()
-        pdf.set_font("Arial", "B", 16)
+        pdf.add_font("DejaVu", "", "DejaVuSans.ttf", uni=True)
+        pdf.set_font("DejaVu", "B", 16)
         pdf.cell(0, 10, content_item.title, ln=True, align='C')
         pdf.ln(10)
 
-        pdf.set_font("Arial", "", 12)
+        pdf.set_font("DejaVu", "", 12)
         pdf.multi_cell(0, 5, content_item.content)
 
         pdf_output = pdf.output(dest='S')
