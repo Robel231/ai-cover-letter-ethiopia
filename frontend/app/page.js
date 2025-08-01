@@ -9,7 +9,7 @@ import { translations } from './translations.js';
 
 // --- Reusable Form Components (with full content) ---
 
-const CoverLetterForm = ({ t, jobDescription, setJobDescription, userInfo, setUserInfo, handleSubmit, isLoading }) => (
+const CoverLetterForm = ({ t, jobDescription, setJobDescription, userInfo, setUserInfo, template, setTemplate, handleSubmit, isLoading }) => (
   <form onSubmit={handleSubmit} className="space-y-6 animate-fade-in">
     <div>
       <label htmlFor="job-desc" className="block text-sm font-medium leading-6 text-gray-300">{t.jobLabel || '1. Paste the Job Description'}</label>
@@ -23,13 +23,21 @@ const CoverLetterForm = ({ t, jobDescription, setJobDescription, userInfo, setUs
         <textarea id="user-info" rows={8} className="block w-full rounded-md border-0 bg-white/5 p-3 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500" placeholder={t.userPlaceholder || 'Your skills...'} value={userInfo} onChange={(e) => setUserInfo(e.target.value)} />
       </div>
     </div>
+    <div>
+      <label htmlFor="template" className="block text-sm font-medium leading-6 text-gray-300">{t.templateLabel || '3. Select a Writing Style'}</label>
+      <select id="template" value={template} onChange={(e) => setTemplate(e.target.value)} className="mt-2 block w-full rounded-md border-0 bg-white/5 py-2.5 pl-3 pr-10 text-white ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500">
+        <option>Professional</option>
+        <option>Formal</option>
+        <option>Creative</option>
+      </select>
+    </div>
     <button type="submit" disabled={isLoading} className="flex w-full justify-center rounded-md bg-indigo-500 px-3 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-400 disabled:bg-gray-600 disabled:cursor-not-allowed">
       {isLoading ? (t.buttonLoading || 'Generating...') : (t.buttonText || 'Generate Cover Letter')}
     </button>
   </form>
 );
 
-const BioForm = ({ t, userInfo, setUserInfo, tone, setTone, handleSubmit, isLoading }) => (
+const BioForm = ({ t, userInfo, setUserInfo, template, setTemplate, handleSubmit, isLoading }) => (
   <form onSubmit={handleSubmit} className="space-y-6 animate-fade-in">
     <div>
       <label htmlFor="bio-user-info" className="block text-sm font-medium leading-6 text-gray-300">{t.bioUserLabel || '1. Enter your skills, experience, or keywords'}</label>
@@ -38,8 +46,8 @@ const BioForm = ({ t, userInfo, setUserInfo, tone, setTone, handleSubmit, isLoad
       </div>
     </div>
     <div>
-      <label htmlFor="tone" className="block text-sm font-medium leading-6 text-gray-300">{t.toneLabel || '2. Select a Tone'}</label>
-      <select id="tone" value={tone} onChange={(e) => setTone(e.target.value)} className="mt-2 block w-full rounded-md border-0 bg-white/5 py-2.5 pl-3 pr-10 text-white ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500">
+      <label htmlFor="template" className="block text-sm font-medium leading-6 text-gray-300">{t.toneLabel || '2. Select a Tone'}</label>
+      <select id="template" value={template} onChange={(e) => setTemplate(e.target.value)} className="mt-2 block w-full rounded-md border-0 bg-white/5 py-2.5 pl-3 pr-10 text-white ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500">
         <option>Professional</option>
         <option>Casual</option>
         <option>Enthusiastic</option>
@@ -58,7 +66,7 @@ export default function Home() {
     const [mode, setMode] = useState('coverLetter');
     const [jobDescription, setJobDescription] = useState('');
     const [userInfo, setUserInfo] = useState('');
-    const [tone, setTone] = useState('Professional');
+    const [template, setTemplate] = useState('Professional');
     const [generatedLetter, setGeneratedLetter] = useState('');
     const [generatedBio, setGeneratedBio] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -98,6 +106,7 @@ export default function Home() {
             const data = await makeAuthenticatedRequest('/api/generate', {
                 job_description: jobDescription,
                 user_info: userInfo,
+                template: template,
             });
             if (data) setGeneratedLetter(data.cover_letter);
         } catch (err) {
@@ -114,7 +123,7 @@ export default function Home() {
         try {
             const data = await makeAuthenticatedRequest('/api/generate-bio', {
                 user_info: userInfo,
-                tone: tone,
+                template: template,
             });
             if (data) setGeneratedBio(data.bio);
         } catch (err) {
@@ -156,7 +165,7 @@ export default function Home() {
                                 {t.bioTitle || 'LinkedIn Bio Generator'}
                             </button>
                         </div>
-                        {mode === 'coverLetter' ? <CoverLetterForm t={t} jobDescription={jobDescription} setJobDescription={setJobDescription} userInfo={userInfo} setUserInfo={setUserInfo} handleSubmit={handleCoverLetterSubmit} isLoading={isLoading} /> : <BioForm t={t} userInfo={userInfo} setUserInfo={setUserInfo} tone={tone} setTone={setTone} handleSubmit={handleBioSubmit} isLoading={isLoading} />}
+                        {mode === 'coverLetter' ? <CoverLetterForm t={t} jobDescription={jobDescription} setJobDescription={setJobDescription} userInfo={userInfo} setUserInfo={setUserInfo} template={template} setTemplate={setTemplate} handleSubmit={handleCoverLetterSubmit} isLoading={isLoading} /> : <BioForm t={t} userInfo={userInfo} setUserInfo={setUserInfo} template={template} setTemplate={setTemplate} handleSubmit={handleBioSubmit} isLoading={isLoading} />}
                         {error && <div className="mt-4 rounded-md bg-red-900/50 p-3 text-sm text-red-300">{error}</div>}
                         {saveSuccess && <div className="mt-4 rounded-md bg-green-900/50 p-3 text-sm text-green-300">{saveSuccess}</div>}
                         {(generatedLetter || generatedBio) && (

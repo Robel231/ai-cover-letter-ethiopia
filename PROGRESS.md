@@ -37,6 +37,7 @@ This document tracks the tasks for building the AI Cover Letter Generator. It se
 - [x] **Frontend:** Style the application with TailwindCSS for a clean, responsive layout.
 - [x] **Frontend:** User authentication pages (Login, Signup).
 - [x] **Frontend:** Dashboard for viewing, editing, and deleting saved content.
+- [x] **Template Engine:** Allow users to choose from different cover letter templates (e.g., "Formal", "Creative", "Tech Industry").
 
 
 ---
@@ -45,5 +46,4 @@ This document tracks the tasks for building the AI Cover Letter Generator. It se
 
 These are features to be considered after the initial version is successfully launched.
 
-- [ ] **Template Engine:** Allow users to choose from different cover letter templates (e.g., "Formal", "Creative", "Tech Industry").
 - [ ] **Voice-to-Text Input:** Use the browser's SpeechRecognition API for hands-free input.

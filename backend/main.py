@@ -43,13 +43,28 @@ app.add_middleware(
 )
 
 # --- AI Prompt Helpers ---
-def create_prompt(job_description: str, user_info: str) -> str:
-    # (Your existing prompt logic here)
-    return f"**Objective:** Write a cover letter...\n\n**Job Description:**\n{job_description}\n\n**User's Info:**\n{user_info}"
+def create_prompt(job_description: str, user_info: str, template: str) -> str:
+    # Base prompt
+    main_prompt = """**Objective:** Write a professional and compelling cover letter based on the provided job description and user information.
 
-def create_bio_prompt(user_info: str, tone: str) -> str:
+**Job Description:**
+{job_description}
+
+**User's Info:**
+{user_info}
+"""
+
+    # Add template-specific instructions
+    if template == "Creative":
+        main_prompt += "\n\n**INSTRUCTION:** Write the letter in a creative, engaging, and slightly less formal tone. Use strong, active verbs and show personality."
+    elif template == "Formal":
+        main_prompt += "\n\n**INSTRUCTION:** Adopt a very formal and traditional tone suitable for corporate or academic positions."
+    
+    return main_prompt
+
+def create_bio_prompt(user_info: str, template: str) -> str:
     # (Your existing bio prompt logic here)
-    return f"**Objective:** Write a LinkedIn bio...\n\n**Tone:** {tone}\n\n**User's Info:**\n{user_info}"
+    return f"**Objective:** Write a LinkedIn bio...\n\n**Tone:** {template}\n\n**User's Info:**\n{user_info}"
 
 # ==========================================================
 # --- Authentication Endpoints ---
@@ -82,7 +97,7 @@ def login(form_data: UserLogin, session: Session = Depends(get_session)):
 # ==========================================================
 @app.post("/api/generate", tags=["AI Generation"])
 def generate_cover_letter(request: CoverLetterRequest, current_user_email: str = Depends(get_current_user_email)):
-    prompt = create_prompt(request.job_description, request.user_info)
+    prompt = create_prompt(request.job_description, request.user_info, request.template)
     chat_completion = groq_client.chat.completions.create(
         messages=[{"role": "user", "content": prompt}],
         model="llama3-8b-8192",
@@ -93,7 +108,7 @@ def generate_cover_letter(request: CoverLetterRequest, current_user_email: str =
 
 @app.post("/api/generate-bio", tags=["AI Generation"])
 def generate_bio(request: BioRequest, current_user_email: str = Depends(get_current_user_email)):
-    prompt = create_bio_prompt(request.user_info, request.tone)
+    prompt = create_bio_prompt(request.user_info, request.template)
     chat_completion = groq_client.chat.completions.create(
         messages=[{"role": "user", "content": prompt}],
         model="llama3-8b-8192",

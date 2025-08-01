@@ -41,10 +41,11 @@ class UserLogin(BaseModel):
 class CoverLetterRequest(BaseModel):
     job_description: str
     user_info: str
+    template: str = "Professional"
 
 class BioRequest(BaseModel):
     user_info: str
-    tone: str
+    template: str
 
 # --- Content CRUD ---
 class GeneratedContentCreate(BaseModel):
