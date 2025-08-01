@@ -2,7 +2,7 @@
 
 This document tracks the tasks for building the AI Cover Letter Generator. It serves as a lightweight project management board.
 
-**Current Status:** Core Features Implemented
+**Current Status:** Version 2.0 Feature Complete & Deployed.
 
 ---
 
@@ -38,6 +38,7 @@ This document tracks the tasks for building the AI Cover Letter Generator. It se
 - [x] **Frontend:** User authentication pages (Login, Signup).
 - [x] **Frontend:** Dashboard for viewing, editing, and deleting saved content.
 - [x] **Template Engine:** Allow users to choose from different cover letter templates (e.g., "Formal", "Creative", "Tech Industry").
+- [x] **Voice-to-Text Input:** Use the browser's SpeechRecognition API for hands-free input.
 
 
 ---
@@ -45,5 +46,3 @@ This document tracks the tasks for building the AI Cover Letter Generator. It se
 ### 🚀 Future Roadmap (Post-Core)
 
 These are features to be considered after the initial version is successfully launched.
-
-- [ ] **Voice-to-Text Input:** Use the browser's SpeechRecognition API for hands-free input.

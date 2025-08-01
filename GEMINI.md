@@ -23,6 +23,7 @@ The project is organized into a monorepo with two main directories:
     - Generates cover letters and LinkedIn bios using the Groq API.
     - Provides CRUD endpoints for managing user-generated content.
     - Provides an endpoint to download generated content as a PDF.
+    - Includes a "Template Engine" to adjust the writing style of the generated content.
 - **Key Files:**
     - `main.py`: The main FastAPI application file containing API endpoints.
     - `models.py`: Defines the database models (`User`, `GeneratedContent`) and Pydantic models for API requests/responses.
@@ -41,12 +42,14 @@ The project is organized into a monorepo with two main directories:
     - A main application page with two modes: "Cover Letter Generator" and "LinkedIn Bio Generator".
     - A dashboard for users to view, search, sort, edit, and delete their saved content.
     - Allows users to download their generated content as a PDF.
+    - "Voice-to-Text" input for dictating content into text fields.
 - **Key Files:**
     - `app/page.js`: The main page of the application.
     - `app/dashboard/page.js`: The user dashboard.
     - `app/login/page.js`: The login page.
     - `app/signup/page.js`: The signup page.
     - `context/AuthContext.js`: The authentication context provider.
+    - `hooks/useSpeechRecognition.js`: A custom hook for the voice-to-text feature.
     - `components/`: Contains reusable React components like the `Navbar` and `LandingPage`.
     - `package.json`: Lists the Node.js dependencies and scripts.
 

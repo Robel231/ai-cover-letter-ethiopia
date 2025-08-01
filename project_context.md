@@ -1,116 +1,54 @@
-# Project Context: AI Cover Letter Ethiopia
+# Project Context for the Next Gemini Agent
 
-This document provides essential context for any developer agent picking up work on the "AI Cover Letter Ethiopia" project. It outlines the project's structure, the purpose of key files, and a detailed rationale behind recent modifications.
+**ATTENTION, NEXT AGENT:** Your primary directive is to strictly adhere to the existing architecture, patterns, and coding style of this project. Before making any modifications, thoroughly analyze the existing code in both the `frontend` and `backend` to ensure your changes are consistent and idiomatic. Do not introduce new frameworks or major architectural changes without explicit user instruction.
+
+---
 
 ## 1. Project Overview
 
-The "AI Cover Letter Ethiopia" is a full-stack web application designed to assist users in the Ethiopian job market. It leverages AI to generate tailored cover letters and LinkedIn bios. The application features user authentication, content generation, and a dashboard for managing saved content, including PDF download functionality.
+This is a full-stack application designed to help users in the Ethiopian job market generate professional cover letters and LinkedIn bios. It features a FastAPI backend that communicates with the Groq AI service and a Next.js frontend for the user interface.
 
-**Technology Stack:**
-- **Backend:** FastAPI (Python)
-- **Database:** SQLModel (ORM) with PostgreSQL
-- **AI Integration:** Groq API
-- **Frontend:** Next.js (React)
-- **Styling:** TailwindCSS
+Key user-facing features you should be aware of:
+- AI-powered content generation (Cover Letters & LinkedIn Bios).
+- User authentication (Signup/Login) and content saving.
+- A "Template Engine" to select the writing style (e.g., Professional, Formal, Creative).
+- "Voice-to-Text" input for dictating content into text fields.
+- PDF download of generated content.
 
-## 2. Project Structure and Key Files
+## 2. File Architecture and Purpose
 
-The project follows a monorepo structure with two main directories: `backend/` and `frontend/`.
+The project is a monorepo with two distinct parts:
 
-### 2.1. Backend (`backend/`)
+### Backend (`/backend`)
 
--   `main.py`:
-    -   **Purpose:** The core FastAPI application. It defines all API endpoints for user authentication (signup, login), AI content generation (cover letters, bios), CRUD operations for generated content, and the PDF download feature.
-    -   **Context:** This file orchestrates the interaction between the database, AI service, and the frontend.
--   `models.py`:
-    -   **Purpose:** Defines the database schema using SQLModel (`User`, `GeneratedContent`) and Pydantic models for API request and response validation (e.g., `UserCreate`, `CoverLetterRequest`, `GeneratedContentResponse`).
-    -   **Context:** Ensures data consistency and proper serialization/deserialization for API communication and database interactions.
--   `database.py`:
-    -   **Purpose:** Handles the database engine creation and provides a `get_session` dependency for managing database sessions.
-    -   **Context:** Centralizes database connection logic, making it reusable across endpoints.
--   `security.py`:
-    -   **Purpose:** Implements user authentication logic, including password hashing (bcrypt), JWT token creation, and token verification for protected routes.
-    -   **Context:** Secures API endpoints, ensuring only authenticated and authorized users can access sensitive functionalities.
--   `requirements.txt`:
-    -   **Purpose:** Lists all Python dependencies required for the backend.
-    -   **Context:** Essential for setting up the development and production environments. `fpdf2` was recently added for PDF generation.
+- **`main.py`**: This is the heart of the backend. It contains all the FastAPI API endpoints. The most recent changes involved updating the `/api/generate` and `/api/generate-bio` endpoints to accept a `template` parameter, which dynamically alters the prompt sent to the Groq AI.
 
-### 2.2. Frontend (`frontend/`)
+- **`models.py`**: Defines all data structures. The Pydantic models (`CoverLetterRequest`, `BioRequest`) are critical as they define the expected shape of API request bodies. I recently modified these to use a consistent `template` field instead of `tone` to standardize the API.
 
--   `app/page.js`:
-    -   **Purpose:** The main landing page for the application. It serves as the primary interface for AI content generation (cover letters and bios) when a user is logged in. If not logged in, it displays the `LandingPage` component.
-    -   **Context:** Manages the state for content generation forms and displays generated results.
--   `app/dashboard/page.js`:
-    -   **Purpose:** The user's personal dashboard. It allows authenticated users to view, search, sort, edit, and delete their previously generated content. It also includes the "Download PDF" functionality for saved items.
-    -   **Context:** Provides content management capabilities and interacts with the backend's CRUD and PDF download endpoints.
--   `app/login/page.js` & `app/signup/page.js`:
-    -   **Purpose:** User authentication interfaces for logging in and creating new accounts.
-    -   **Context:** Handles form submissions and interacts with the backend's authentication endpoints.
--   `components/Navbar.js`:
-    -   **Purpose:** The navigation bar component, providing links to different parts of the application and handling logout functionality.
-    -   **Context:** Provides consistent navigation and user session management across the application.
--   `components/LandingPage.js`:
-    -   **Purpose:** The public-facing landing page displayed to unauthenticated users.
-    -   **Context:** Introduces the application's features and prompts users to sign up or log in.
--   `context/AuthContext.js`:
-    -   **Purpose:** A React Context provider for managing user authentication state (token, login status) across the frontend application.
-    -   **Context:** Centralizes authentication logic, making user session data easily accessible to any component.
--   `package.json`:
-    -   **Purpose:** Lists all Node.js/JavaScript dependencies and defines scripts for the frontend.
-    -   **Context:** Essential for managing frontend development and build processes.
+- **`security.py` & `database.py`**: These files handle authentication logic (JWT) and database session management, respectively. They are stable and should not require frequent changes.
 
-## 3. Recent Modifications and Rationale
+### Frontend (`/frontend`)
 
-The following significant changes have been implemented:
+- **`app/page.js`**: This is the most important file on the frontend. It's a single, comprehensive client component that manages the state for the entire main application page. 
+    - **Why it was structured this way:** It controls the two main modes ("Cover Letter" and "Bio"), handles all user input fields, manages the generated output, and contains the API submission logic. While large, it centralizes the core application logic.
+    - **Your Task:** When modifying this file, pay close attention to the existing state variables and how they are passed down to the form components (`CoverLetterForm`, `BioForm`). The `makeAuthenticatedRequest` function is the standardized way to call the backend.
 
-### 3.1. Server-Side PDF Download Feature
+- **`hooks/useSpeechRecognition.js`**: This is a new custom hook I created to implement the "Voice-to-Text" feature.
+    - **Why it was created:** To encapsulate the complex logic of using the browser's Speech Recognition API and keep the main `page.js` component cleaner. It manages listening state, transcripts, and browser support checks.
+    - **Your Task:** If you need to modify voice input behavior, start here. This hook is designed to be reusable.
 
--   **Backend (`backend/main.py`):**
-    -   **Addition of `fpdf2`:** The `fpdf2` library was added to `requirements.txt` to enable server-side PDF generation.
-    -   **New Endpoint (`GET /api/content/{content_id}/download-pdf`):** This endpoint was created to allow users to download their saved content as a PDF.
-        -   **Why:** To provide users with a portable and printable version of their generated cover letters and bios.
-        -   **Authentication:** The endpoint is protected, ensuring only the content owner can download their specific content.
-    -   **PDF Generation Logic:**
-        -   Initial attempts to use a custom Unicode font (`DejaVuSans.ttf`) led to `TTLibError` due to issues with the font file itself.
-        -   **Current State:** The PDF generation currently uses `fpdf2`'s built-in "Arial" font. Content is encoded using `latin-1` with a `replace` strategy (`.encode('latin-1', 'replace').decode('latin-1')`) to prevent `UnicodeEncodeError` for non-ASCII characters. This means some special Unicode characters might appear as `?` in the PDF.
-        -   **Why:** This approach was chosen as a temporary measure to ensure the PDF generation is functional and does not crash, given the issues with external font files. A future enhancement could involve bundling a reliable Unicode font and configuring `fpdf2` to use it properly.
-    -   **Error Handling:** A `try-except` block was added around the PDF generation logic to catch exceptions and return a `500 Internal Server Error` with a more informative detail message. Logging was also enhanced (`logging.info`, `logging.exception`) to provide better visibility into backend issues.
-    -   **Response Handling:** The `pdf.output(dest='S')` returns a `bytearray`. The `Response` object was updated to explicitly cast this to `bytes` (`content=bytes(pdf_output)`) to resolve an `AttributeError: 'bytearray' object has no attribute 'encode'` that occurred when Starlette attempted to encode an already binary object.
--   **Frontend (`frontend/app/dashboard/page.js`):**
-    -   **"Download PDF" Button:** A new button was added to the `ContentModal` component, allowing users to trigger the PDF download.
-    -   **`handleDownloadPdf` Function:** This asynchronous function was implemented to make the `GET` request to the backend's PDF endpoint.
-    -   **Blob Handling:** The function correctly handles the binary `application/pdf` response by creating a `Blob` object, generating a temporary URL (`URL.createObjectURL`), and programmatically triggering a file download in the browser.
-    -   **Error State:** Basic loading and error states (`isDownloading`, `downloadError`) were added to provide user feedback during the download process. Frontend error handling was improved to parse JSON error responses from the backend for more specific messages.
+- **`context/AuthContext.js`**: A standard React context for managing the user's authentication status and JWT token globally.
 
-### 3.2. Frontend Build Fix
+## 3. Rationale for Recent Changes
 
--   **`frontend/app/login/page.js`:**
-    -   **Issue:** An ESLint error (`react/no-unescaped-entities`) was preventing the frontend build due to an unescaped apostrophe in the JSX (`Don't have an account?`).
-    -   **Fix:** The apostrophe was replaced with its HTML entity `&apos;` to resolve the ESLint warning and allow the build to succeed.
+- **Template Engine**: I implemented this to give users more control over the generated content's tone. The key was to standardize the API by using a single `template` field across all models and endpoints for consistency.
 
-## 4. Instructions for the Next Agent
+- **Voice-to-Text Input**: This feature was added to improve accessibility and user experience. I chose to create a custom `useSpeechRecognition` hook to follow React best practices, promoting reusability and separation of concerns. The microphone buttons were added directly into the form components in `page.js`, and a new state `activeTextArea` was introduced to direct the transcribed text to the correct input field.
 
-**Strict Adherence to Existing Patterns:**
+## 4. STRICT COMMAND FOR THE NEXT AGENT
 
-The next developer agent **MUST** strictly adhere to the existing architecture, coding patterns, and project structure established in this repository. This includes, but is not limited to:
+**Adhere to the established patterns.** Before writing any code, you must first read and understand the relevant files (`main.py`, `app/page.js`, etc.).
 
--   **Backend:**
-    -   Continue using FastAPI for new endpoints.
-    -   Maintain SQLModel for database interactions.
-    -   Follow existing authentication and security patterns.
-    -   Utilize the `get_session` dependency for database access.
-    -   Adhere to the existing logging conventions.
--   **Frontend:**
-    -   Continue using Next.js and React for component development.
-    -   Maintain TailwindCSS for styling.
-    -   Utilize the `AuthContext` for managing user authentication state.
-    -   Follow the existing component structure and data flow.
-    -   Ensure all new UI elements are responsive and consistent with the current design.
--   **General:**
-    -   Maintain the monorepo structure.
-    -   Write clear, concise, and idiomatic code for both Python and JavaScript.
-    -   Add new dependencies only if absolutely necessary and justify their inclusion.
-    -   Prioritize security best practices in all new implementations.
-    -   Ensure all changes are covered by appropriate testing (if testing framework is established) and pass linting/type-checking.
-
-Any significant deviation from these established patterns requires explicit discussion and approval. The goal is to maintain a cohesive, maintainable, and scalable codebase.
+- **For Backend Changes:** Use Pydantic models for data validation and keep endpoint logic within `main.py`.
+- **For Frontend Changes:** Utilize the existing React hooks (`useState`, `useEffect`) and custom hooks (`useSpeechRecognition`). Maintain the centralized state management within `app/page.js`. Do not introduce new state management libraries (like Redux) or CSS frameworks (like Material-UI). Style changes should use the existing TailwindCSS utility classes.
+- **Consistency is Key:** Ensure any new code you add matches the style, structure, and conventions of the surrounding code.

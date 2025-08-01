@@ -1,26 +1,37 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import Navbar from '@/components/Navbar';
 import LandingPage from '@/components/LandingPage';
 import Link from 'next/link';
 import { translations } from './translations.js';
+import useSpeechRecognition from '../hooks/useSpeechRecognition';
 
 // --- Reusable Form Components (with full content) ---
 
-const CoverLetterForm = ({ t, jobDescription, setJobDescription, userInfo, setUserInfo, template, setTemplate, handleSubmit, isLoading }) => (
+const CoverLetterForm = ({ t, jobDescription, setJobDescription, userInfo, setUserInfo, template, setTemplate, handleSubmit, isLoading, activeTextArea, setActiveTextArea, isListening, startListening, stopListening, hasRecognitionSupport }) => (
   <form onSubmit={handleSubmit} className="space-y-6 animate-fade-in">
     <div>
       <label htmlFor="job-desc" className="block text-sm font-medium leading-6 text-gray-300">{t.jobLabel || '1. Paste the Job Description'}</label>
-      <div className="mt-2">
-        <textarea id="job-desc" rows={8} className="block w-full rounded-md border-0 bg-white/5 p-3 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500" placeholder={t.jobPlaceholder || 'e.g., from EthioJobs...'} value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} />
+      <div className="mt-2 relative">
+        <textarea id="job-desc" rows={8} className="block w-full rounded-md border-0 bg-white/5 p-3 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500" placeholder={t.jobPlaceholder || 'e.g., from EthioJobs...'} value={jobDescription} onFocus={() => setActiveTextArea('jobDescription')} onChange={(e) => setJobDescription(e.target.value)} />
+        {hasRecognitionSupport && (
+            <button type="button" onClick={isListening && activeTextArea === 'jobDescription' ? stopListening : startListening} className={`absolute top-2 right-2 p-1 rounded-full ${isListening && activeTextArea === 'jobDescription' ? 'bg-red-500' : 'bg-gray-600'} hover:bg-gray-500`}>
+                🎤
+            </button>
+        )}
       </div>
     </div>
     <div>
       <label htmlFor="user-info" className="block text-sm font-medium leading-6 text-gray-300">{t.userLabel || '2. Paste Your Resume or Key Skills'}</label>
-      <div className="mt-2">
-        <textarea id="user-info" rows={8} className="block w-full rounded-md border-0 bg-white/5 p-3 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500" placeholder={t.userPlaceholder || 'Your skills...'} value={userInfo} onChange={(e) => setUserInfo(e.target.value)} />
+      <div className="mt-2 relative">
+        <textarea id="user-info" rows={8} className="block w-full rounded-md border-0 bg-white/5 p-3 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500" placeholder={t.userPlaceholder || 'Your skills...'} value={userInfo} onFocus={() => setActiveTextArea('userInfo')} onChange={(e) => setUserInfo(e.target.value)} />
+        {hasRecognitionSupport && (
+            <button type="button" onClick={isListening && activeTextArea === 'userInfo' ? stopListening : startListening} className={`absolute top-2 right-2 p-1 rounded-full ${isListening && activeTextArea === 'userInfo' ? 'bg-red-500' : 'bg-gray-600'} hover:bg-gray-500`}>
+                🎤
+            </button>
+        )}
       </div>
     </div>
     <div>
@@ -37,12 +48,17 @@ const CoverLetterForm = ({ t, jobDescription, setJobDescription, userInfo, setUs
   </form>
 );
 
-const BioForm = ({ t, userInfo, setUserInfo, template, setTemplate, handleSubmit, isLoading }) => (
+const BioForm = ({ t, userInfo, setUserInfo, template, setTemplate, handleSubmit, isLoading, activeTextArea, setActiveTextArea, isListening, startListening, stopListening, hasRecognitionSupport }) => (
   <form onSubmit={handleSubmit} className="space-y-6 animate-fade-in">
     <div>
       <label htmlFor="bio-user-info" className="block text-sm font-medium leading-6 text-gray-300">{t.bioUserLabel || '1. Enter your skills, experience, or keywords'}</label>
-      <div className="mt-2">
-        <textarea id="bio-user-info" rows={8} className="block w-full rounded-md border-0 bg-white/5 p-3 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500" placeholder={t.bioUserPlaceholder || 'e.g., Senior Python Developer...'} value={userInfo} onChange={(e) => setUserInfo(e.target.value)} />
+      <div className="mt-2 relative">
+        <textarea id="bio-user-info" rows={8} className="block w-full rounded-md border-0 bg-white/5 p-3 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500" placeholder={t.bioUserPlaceholder || 'e.g., Senior Python Developer...'} value={userInfo} onFocus={() => setActiveTextArea('bioUserInfo')} onChange={(e) => setUserInfo(e.target.value)} />
+        {hasRecognitionSupport && (
+            <button type="button" onClick={isListening && activeTextArea === 'bioUserInfo' ? stopListening : startListening} className={`absolute top-2 right-2 p-1 rounded-full ${isListening && activeTextArea === 'bioUserInfo' ? 'bg-red-500' : 'bg-gray-600'} hover:bg-gray-500`}>
+                🎤
+            </button>
+        )}
       </div>
     </div>
     <div>
@@ -72,6 +88,21 @@ export default function Home() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [saveSuccess, setSaveSuccess] = useState('');
+    const [activeTextArea, setActiveTextArea] = useState(null);
+
+    const { isListening, transcript, startListening, stopListening, hasRecognitionSupport } = useSpeechRecognition();
+
+    useEffect(() => {
+        if (transcript) {
+            if (activeTextArea === 'jobDescription') {
+                setJobDescription(prev => prev + transcript);
+            } else if (activeTextArea === 'userInfo') {
+                setUserInfo(prev => prev + transcript);
+            } else if (activeTextArea === 'bioUserInfo') {
+                setUserInfo(prev => prev + transcript);
+            }
+        }
+    }, [transcript, activeTextArea]);
 
     const t = translations['en'] || {};
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ai-cover-letter-backend.onrender.com';
@@ -165,7 +196,7 @@ export default function Home() {
                                 {t.bioTitle || 'LinkedIn Bio Generator'}
                             </button>
                         </div>
-                        {mode === 'coverLetter' ? <CoverLetterForm t={t} jobDescription={jobDescription} setJobDescription={setJobDescription} userInfo={userInfo} setUserInfo={setUserInfo} template={template} setTemplate={setTemplate} handleSubmit={handleCoverLetterSubmit} isLoading={isLoading} /> : <BioForm t={t} userInfo={userInfo} setUserInfo={setUserInfo} template={template} setTemplate={setTemplate} handleSubmit={handleBioSubmit} isLoading={isLoading} />}
+                        {mode === 'coverLetter' ? <CoverLetterForm t={t} jobDescription={jobDescription} setJobDescription={setJobDescription} userInfo={userInfo} setUserInfo={setUserInfo} template={template} setTemplate={setTemplate} handleSubmit={handleCoverLetterSubmit} isLoading={isLoading} activeTextArea={activeTextArea} setActiveTextArea={setActiveTextArea} isListening={isListening} startListening={startListening} stopListening={stopListening} hasRecognitionSupport={hasRecognitionSupport} /> : <BioForm t={t} userInfo={userInfo} setUserInfo={setUserInfo} template={template} setTemplate={setTemplate} handleSubmit={handleBioSubmit} isLoading={isLoading} activeTextArea={activeTextArea} setActiveTextArea={setActiveTextArea} isListening={isListening} startListening={startListening} stopListening={stopListening} hasRecognitionSupport={hasRecognitionSupport} />}
                         {error && <div className="mt-4 rounded-md bg-red-900/50 p-3 text-sm text-red-300">{error}</div>}
                         {saveSuccess && <div className="mt-4 rounded-md bg-green-900/50 p-3 text-sm text-green-300">{saveSuccess}</div>}
                         {(generatedLetter || generatedBio) && (

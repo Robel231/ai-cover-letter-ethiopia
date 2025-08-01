@@ -11,6 +11,7 @@ This project solves a real pain point for job seekers browsing sites like EthioJ
 *   **Job Description Input:** Paste any job description from an Ethiopian job board.
 *   **Resume/Skills Input:** Paste your CV content or fill in key details like skills and experience.
 *   **AI-Powered Generation:** Uses the blazingly fast Groq API to craft a unique cover letter that matches your profile to the job's requirements.
+*   **Voice-to-Text Input:** Dictate your resume details or job descriptions directly into the text fields using your microphone.
 *   **Clean & Simple UI:** A beautiful, responsive interface that's easy to use.
 *   **Copy & Download:** Instantly copy the generated letter to your clipboard.
 *   **Bilingual Support:** Switch between English and Amharic for the user interface and generated output.
