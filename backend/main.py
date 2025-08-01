@@ -44,8 +44,16 @@ app.add_middleware(
 
 # --- AI Prompt Helpers ---
 def create_prompt(job_description: str, user_info: str, template: str) -> str:
+    """Creates a detailed, high-quality prompt for the AI."""
+    # --- DEBUGGING PRINTS ---
+    print(f"--- Creating Prompt ---")
+    print(f"Received Job Description (first 50 chars): {job_description[:50]}")
+    print(f"Received User Info (first 50 chars): {user_info[:50]}")
+    print(f"-----------------------")
+    # --- END DEBUGGING ---
+
     # Base prompt
-    main_prompt = """**Objective:** Write a professional and compelling cover letter based on the provided job description and user information.
+    main_prompt = f"""**Objective:** Write a professional and compelling cover letter based on the provided job description and user information.
 
 **Job Description:**
 {job_description}
