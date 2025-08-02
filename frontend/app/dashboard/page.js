@@ -1,10 +1,47 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
+import Skeleton from '@/components/Skeleton'; // Import Skeleton
+
+// --- Animation Variants ---
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.1,
+        },
+    },
+};
+
+const itemVariants = {
+    hidden: { opacity: 0, y: 20, scale: 0.98 },
+    visible: { 
+        opacity: 1, 
+        y: 0, 
+        scale: 1,
+        transition: { type: 'spring', stiffness: 100 }
+    },
+    exit: { opacity: 0, scale: 0.95, transition: { duration: 0.2 } }
+};
+
+const modalOverlayVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1 },
+    exit: { opacity: 0 },
+};
+
+const modalContentVariants = {
+    hidden: { scale: 0.9, opacity: 0 },
+    visible: { scale: 1, opacity: 1, transition: { type: 'spring', stiffness: 200, damping: 20 } },
+    exit: { scale: 0.9, opacity: 0 },
+};
+
 
 // --- Reusable Icon Component ---
 const Icon = ({ type }) => {
@@ -45,8 +82,17 @@ const ContentModal = ({ item, onClose, onSave, onDelete, onDownloadPdf }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 animate-fade-in">
-            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+        <motion.div 
+            className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
+            variants={modalOverlayVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+        >
+            <motion.div 
+                className="bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col"
+                variants={modalContentVariants}
+            >
                 <div className="p-4 border-b border-gray-700 flex justify-between items-center">
                     {isEditing ? (
                         <input
@@ -82,10 +128,35 @@ const ContentModal = ({ item, onClose, onSave, onDelete, onDownloadPdf }) => {
                     </div>
                 </div>
                 {downloadError && <p className="text-red-400 text-center pb-4">{downloadError}</p>}
-            </div>
-        </div>
+            </motion.div>
+        </motion.div>
     );
 };
+
+// --- Skeleton Loader for Dashboard ---
+const DashboardSkeleton = () => (
+    <div className="max-w-7xl mx-auto animate-pulse">
+        <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
+            <Skeleton className="h-9 w-48" />
+            <Skeleton className="h-9 w-40" />
+        </div>
+        <div className="flex flex-wrap gap-4 mb-6">
+            <Skeleton className="h-10 flex-grow min-w-[200px]" />
+            <Skeleton className="h-10 w-40" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[...Array(6)].map((_, i) => (
+                <div key={i} className="bg-gray-800 p-4 rounded-lg shadow-lg">
+                    <Skeleton className="h-6 w-3/4 mb-2" />
+                    <Skeleton className="h-4 w-1/2 mb-4" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-full mt-2" />
+                    <Skeleton className="h-4 w-5/6 mt-2" />
+                </div>
+            ))}
+        </div>
+    </div>
+);
 
 
 // --- Main Dashboard Page Component ---
@@ -167,9 +238,6 @@ export default function DashboardPage() {
     };
 
     const handleDownloadPdf = async (contentId, title) => {
-        console.log('Attempting PDF download...');
-        console.log('API Base URL:', API_BASE_URL);
-        console.log('Auth Token present:', !!token); // Check if token exists
         try {
             const response = await fetch(`${API_BASE_URL}/api/content/${contentId}/download-pdf`, {
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -179,7 +247,6 @@ export default function DashboardPage() {
             }
             const blob = await response.blob();
             if (response.headers.get('content-type') === 'application/json') {
-                // If the response is JSON, it means an error occurred on the backend
                 const errorData = JSON.parse(await blob.text());
                 throw new Error(errorData.detail || 'Failed to download PDF due to a server error.');
             }
@@ -193,7 +260,6 @@ export default function DashboardPage() {
             window.URL.revokeObjectURL(url); // Clean up the URL object
         } catch (err) {
             console.error("Download PDF error:", err);
-            // Set the error state in the modal component
             throw err; // Re-throw to be caught by the modal's handleDownload
         }
     };
@@ -222,77 +288,91 @@ export default function DashboardPage() {
     }, [allContent, searchTerm, sortBy]);
 
 
-    // --- Render Logic ---
-    if (isLoading) {
-        return <div className="flex flex-col min-h-screen bg-gray-900 text-white"><Navbar /><div className="flex-grow flex items-center justify-center"><p>Loading Dashboard...</p></div></div>;
-    }
-
     return (
         <div className="flex flex-col min-h-screen bg-gray-900 text-white">
             <Navbar />
             <main className="flex-grow pt-24 px-4 sm:px-6 lg:px-8">
-                <div className="max-w-7xl mx-auto">
-                    {/* Header */}
-                    <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
-                        <h1 className="text-3xl font-bold">Your Dashboard</h1>
-                        <Link href="/" className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-md text-sm font-medium">
-                            + Generate New Content
-                        </Link>
-                    </div>
+                {isLoading ? (
+                    <DashboardSkeleton />
+                ) : (
+                    <div className="max-w-7xl mx-auto">
+                        {/* Header */}
+                        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                            <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
+                                <h1 className="text-3xl font-bold">Your Dashboard</h1>
+                                <Link href="/" className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-md text-sm font-medium">
+                                    + Generate New Content
+                                </Link>
+                            </div>
 
-                    {/* Controls: Search and Sort */}
-                    <div className="flex flex-wrap gap-4 mb-6">
-                        <input
-                            type="text"
-                            placeholder="Search by title or content..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="flex-grow bg-gray-700 text-white px-4 py-2 rounded-md min-w-[200px]"
-                        />
-                        <select
-                            value={sortBy}
-                            onChange={(e) => setSortBy(e.target.value)}
-                            className="bg-gray-700 text-white px-4 py-2 rounded-md"
-                        >
-                            <option value="newest">Sort by Newest</option>
-                            <option value="oldest">Sort by Oldest</option>
-                            <option value="title">Sort by Title (A-Z)</option>
-                        </select>
-                    </div>
+                            {/* Controls: Search and Sort */}
+                            <div className="flex flex-wrap gap-4 mb-6">
+                                <input
+                                    type="text"
+                                    placeholder="Search by title or content..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="flex-grow bg-gray-700 text-white px-4 py-2 rounded-md min-w-[200px]"
+                                />
+                                <select
+                                    value={sortBy}
+                                    onChange={(e) => setSortBy(e.target.value)}
+                                    className="bg-gray-700 text-white px-4 py-2 rounded-md"
+                                >
+                                    <option value="newest">Sort by Newest</option>
+                                    <option value="oldest">Sort by Oldest</option>
+                                    <option value="title">Sort by Title (A-Z)</option>
+                                </select>
+                            </div>
+                        </motion.div>
 
-                    {error && <p className="text-red-400">{error}</p>}
-                    
-                    {/* Content List */}
-                    {filteredAndSortedContent.length === 0 ? (
-                        <div className="text-center py-10">
-                            <p className="text-gray-400">{searchTerm ? 'No items match your search.' : 'You haven\'t saved any content yet.'}</p>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {filteredAndSortedContent.map((item) => (
-                                <div key={item.id} onClick={() => setSelectedItem(item)} className="bg-gray-800 p-4 rounded-lg shadow-lg hover:bg-gray-700 cursor-pointer transition-colors">
-                                    <h2 className="font-bold text-lg text-indigo-400 truncate flex items-center gap-2">
-                                        <Icon type={item.content_type} /> {item.title}
-                                    </h2>
-                                    <p className="text-xs text-gray-400 mb-2">Saved on {new Date(item.created_at).toLocaleDateString()}</p>
-                                    <p className="text-gray-300 text-sm line-clamp-3">{item.content}</p>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
+                        {error && <p className="text-red-400">{error}</p>}
+                        
+                        {/* Content List */}
+                        {filteredAndSortedContent.length === 0 && !error ? (
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-10">
+                                <p className="text-gray-400">{searchTerm ? 'No items match your search.' : 'You haven\'t saved any content yet.'}</p>
+                            </motion.div>
+                        ) : (
+                            <motion.div 
+                                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+                                variants={containerVariants}
+                                initial="hidden"
+                                animate="visible"
+                            >
+                                {filteredAndSortedContent.map((item) => (
+                                    <motion.div 
+                                        key={item.id} 
+                                        onClick={() => setSelectedItem(item)} 
+                                        className="bg-gray-800 p-4 rounded-lg shadow-lg hover:bg-gray-700 cursor-pointer"
+                                        variants={itemVariants}
+                                        layoutId={`card-container-${item.id}`}
+                                    >
+                                        <h2 className="font-bold text-lg text-indigo-400 truncate flex items-center gap-2">
+                                            <Icon type={item.content_type} /> {item.title}
+                                        </h2>
+                                        <p className="text-xs text-gray-400 mb-2">Saved on {new Date(item.created_at).toLocaleDateString()}</p>
+                                        <p className="text-gray-300 text-sm line-clamp-3">{item.content}</p>
+                                    </motion.div>
+                                ))}
+                            </motion.div>
+                        )}
+                    </div>
+                )}
             </main>
 
             {/* Modal */}
-            {selectedItem && (
-                <ContentModal
-                    item={selectedItem}
-                    onClose={() => setSelectedItem(null)}
-                    onSave={handleSaveTitle}
-                    onDelete={handleDelete}
-                    onDownloadPdf={handleDownloadPdf}
-                />
-            )}
+            <AnimatePresence>
+                {selectedItem && (
+                    <ContentModal
+                        item={selectedItem}
+                        onClose={() => setSelectedItem(null)}
+                        onSave={handleSaveTitle}
+                        onDelete={handleDelete}
+                        onDownloadPdf={handleDownloadPdf}
+                    />
+                )}
+            </AnimatePresence>
         </div>
     );
 }

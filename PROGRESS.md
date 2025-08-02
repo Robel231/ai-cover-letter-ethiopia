@@ -41,6 +41,8 @@ This document tracks the tasks for building the AI Cover Letter Generator. It se
 - [x] **Voice-to-Text Input:** Use the browser's SpeechRecognition API for hands-free input.
 - [x] **Feature:** Implement AI-powered resume parsing (PDF upload) to autofill user information.
 
+### Phase 3: Dashboard & User Experience Polish
+- [x] **UX/UI:** Implemented professional loading animations for all major actions (dashboard, forms, auth buttons).
 
 ---
 

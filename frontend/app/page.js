@@ -1,15 +1,52 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
 import Navbar from '@/components/Navbar';
 import LandingPage from '@/components/LandingPage';
-import Link from 'next/link';
+import Skeleton from '@/components/Skeleton';
 import { translations } from './translations.js';
 import useSpeechRecognition from '../hooks/useSpeechRecognition';
 
-// --- Reusable Form Components (with full content) ---
+// --- Reusable Loading Spinner ---
+const LoadingSpinner = () => (
+    <motion.svg
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        animate={{ rotate: 360 }}
+        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+    >
+        <path d="M12 2V6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M12 18V22" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M4.93 4.93L7.76 7.76" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M16.24 16.24L19.07 19.07" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M2 12H6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M18 12H22" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M4.93 19.07L7.76 16.24" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M16.24 7.76L19.07 4.93" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </motion.svg>
+);
 
+// --- Result Skeleton Loader ---
+const ResultSkeleton = () => (
+    <div className="mt-10 space-y-4">
+        <Skeleton className="h-8 w-1/3" />
+        <div className="space-y-2">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-5/6" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-3/4" />
+        </div>
+    </div>
+);
+
+
+// --- Reusable Form Components ---
 const CoverLetterForm = ({ t, jobDescription, setJobDescription, userInfo, setUserInfo, template, setTemplate, handleSubmit, isLoading, isUploading, handleResumeUpload, activeTextArea, setActiveTextArea, isListening, startListening, stopListening, hasRecognitionSupport }) => {
   const fileInputRef = useRef(null);
 
@@ -52,7 +89,12 @@ const CoverLetterForm = ({ t, jobDescription, setJobDescription, userInfo, setUs
         </select>
       </div>
       <button type="submit" disabled={isLoading || isUploading} className="flex w-full justify-center rounded-md bg-indigo-500 px-3 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-400 disabled:bg-gray-600 disabled:cursor-not-allowed">
-        {isLoading ? (t.buttonLoading || 'Generating...') : (t.buttonText || 'Generate Cover Letter')}
+        {isLoading ? (
+          <div className="flex items-center justify-center gap-2">
+            <LoadingSpinner />
+            <span>{t.buttonLoading || 'Generating...'}</span>
+          </div>
+        ) : (t.buttonText || 'Generate Cover Letter')}
       </button>
     </form>
   );
@@ -89,7 +131,12 @@ const BioForm = ({ t, userInfo, setUserInfo, template, setTemplate, handleSubmit
       </select>
     </div>
     <button type="submit" disabled={isLoading || isUploading} className="flex w-full justify-center rounded-md bg-indigo-500 px-3 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-400 disabled:bg-gray-600 disabled:cursor-not-allowed">
-      {isLoading ? (t.buttonLoading || 'Generating...') : (t.generateBioButton || 'Generate Bio')}
+      {isLoading ? (
+          <div className="flex items-center justify-center gap-2">
+            <LoadingSpinner />
+            <span>{t.buttonLoading || 'Generating...'}</span>
+          </div>
+        ) : (t.generateBioButton || 'Generate Bio')}
     </button>
   </form>
 )};
@@ -251,15 +298,25 @@ export default function Home() {
                         {mode === 'coverLetter' ? <CoverLetterForm t={t} jobDescription={jobDescription} setJobDescription={setJobDescription} userInfo={userInfo} setUserInfo={setUserInfo} template={template} setTemplate={setTemplate} handleSubmit={handleCoverLetterSubmit} isLoading={isLoading} isUploading={isUploading} handleResumeUpload={handleResumeUpload} activeTextArea={activeTextArea} setActiveTextArea={setActiveTextArea} isListening={isListening} startListening={startListening} stopListening={stopListening} hasRecognitionSupport={hasRecognitionSupport} /> : <BioForm t={t} userInfo={userInfo} setUserInfo={setUserInfo} template={template} setTemplate={setTemplate} handleSubmit={handleBioSubmit} isLoading={isLoading} isUploading={isUploading} handleResumeUpload={handleResumeUpload} activeTextArea={activeTextArea} setActiveTextArea={setActiveTextArea} isListening={isListening} startListening={startListening} stopListening={stopListening} hasRecognitionSupport={hasRecognitionSupport} />}
                         {error && <div className="mt-4 rounded-md bg-red-900/50 p-3 text-sm text-red-300">{error}</div>}
                         {saveSuccess && <div className="mt-4 rounded-md bg-green-900/50 p-3 text-sm text-green-300">{saveSuccess}</div>}
-                        {(generatedLetter || generatedBio) && (
-                            <div className="mt-10 animate-fade-in">
-                                <div className="flex justify-between items-center mb-4">
-                                    <h2 className="text-xl font-semibold">{mode === 'coverLetter' ? 'Generated Cover Letter' : 'Generated Bio'}</h2>
-                                    <button onClick={handleSaveContent} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-md text-sm font-medium">💾 Save</button>
-                                </div>
-                                <pre className="whitespace-pre-wrap rounded-md bg-gray-800 p-4 font-sans text-sm">{mode === 'coverLetter' ? generatedLetter : generatedBio}</pre>
-                            </div>
-                        )}
+                        
+                        {isLoading && <ResultSkeleton />}
+
+                        <AnimatePresence>
+                            {!isLoading && (generatedLetter || generatedBio) && (
+                                <motion.div 
+                                    className="mt-10"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -20 }}
+                                >
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h2 className="text-xl font-semibold">{mode === 'coverLetter' ? 'Generated Cover Letter' : 'Generated Bio'}</h2>
+                                        <button onClick={handleSaveContent} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-md text-sm font-medium">💾 Save</button>
+                                    </div>
+                                    <pre className="whitespace-pre-wrap rounded-md bg-gray-800 p-4 font-sans text-sm">{mode === 'coverLetter' ? generatedLetter : generatedBio}</pre>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                 ) : (
                     // --- LOGGED-OUT VIEW ---

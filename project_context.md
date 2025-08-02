@@ -1,54 +1,61 @@
-# Project Context for the Next Gemini Agent
+# Project Context for AI Cover Letter Ethiopia
 
-**ATTENTION, NEXT AGENT:** Your primary directive is to strictly adhere to the existing architecture, patterns, and coding style of this project. Before making any modifications, thoroughly analyze the existing code in both the `frontend` and `backend` to ensure your changes are consistent and idiomatic. Do not introduce new frameworks or major architectural changes without explicit user instruction.
+This document provides essential context for the next developer agent continuing work on this project. It outlines the recent changes, the rationale behind them, and establishes clear guidelines for future development.
+
+## Project State & Recent Developments
+
+The project is a full-stack application with a FastAPI backend and a Next.js frontend. The core features are functionally complete. The most recent development cycle focused heavily on improving the User Experience (UX) and User Interface (UI) by adding professional, modern animations and loading states.
+
+The primary goal of these changes was to make the application feel more responsive, polished, and professional, reducing perceived loading times and providing better visual feedback to the user.
+
+## Key Files & Modifications
+
+### Core Technology Added
+- **`framer-motion`**: This library was added to the frontend dependencies (`frontend/package.json`) to handle all new animations. It was chosen for its power, ease of use, and integration with React.
+
+### Components
+- **`frontend/components/Skeleton.js`**:
+    - **Purpose**: A new reusable component created to display a shimmering, animated placeholder.
+    - **Rationale**: This replaces jarring "Loading..." text with a visually appealing skeleton screen that mimics the layout of the content being loaded. This is a modern UX pattern that improves perceived performance. It is used in the dashboard.
+
+- **`frontend/components/LandingPage.js`**:
+    - **Purpose**: The public-facing landing page.
+    - **Modifications**:
+        - The content was updated to reflect the application's full feature set (Resume Parser, LinkedIn Bio Generator, etc.).
+        - Staggered entrance animations were added to the hero section and feature cards using `framer-motion`.
+    - **Rationale**: To make a stronger first impression on new users and clearly communicate the value proposition of the app.
+
+### Application Pages
+- **`frontend/app/dashboard/page.js`**:
+    - **Purpose**: Displays the user's saved content.
+    - **Modifications**:
+        - The simple "Loading Dashboard..." text was replaced with the new `Skeleton` component, creating a skeleton layout of the dashboard grid.
+        - Staggered animations were added to the content cards so they animate into view gracefully.
+    - **Rationale**: To provide a seamless loading experience, preventing layout shifts and making the page feel faster.
+
+- **`frontend/app/login/page.js` & `frontend/app/signup/page.js`**:
+    - **Purpose**: User authentication entry points.
+    - **Modifications**:
+        - The "Log In" and "Sign Up" buttons now have an animated loading state. When a user submits the form, the button text is replaced by three animating dots.
+    - **Rationale**: To provide clear visual feedback that the authentication request is in progress, preventing double-clicks and assuring the user that the system is working.
+
+- **`frontend/app/page.js` (Generator Page)**:
+    - **Purpose**: The main application page for generating content.
+    - **Modifications**:
+        - The "Generate" buttons now have an animated spinner icon when `isLoading` is true.
+        - A `ResultSkeleton` loader is now displayed while waiting for the AI-generated content to arrive.
+    - **Rationale**: To provide immediate feedback for user actions and to fill the empty space during generation, making the wait feel more active and less frustrating.
 
 ---
 
-## 1. Project Overview
+## ❗**Mandatory Directive for Future Development**❗
 
-This is a full-stack application designed to help users in the Ethiopian job market generate professional cover letters and LinkedIn bios. It features a FastAPI backend that communicates with the Groq AI service and a Next.js frontend for the user interface.
+**The next agent MUST strictly adhere to the existing architecture, patterns, and libraries established in this project.**
 
-Key user-facing features you should be aware of:
-- AI-powered content generation (Cover Letters & LinkedIn Bios).
-- User authentication (Signup/Login) and content saving.
-- A "Template Engine" to select the writing style (e.g., Professional, Formal, Creative).
-- "Voice-to-Text" input for dictating content into text fields.
-- PDF download of generated content.
+- **Consistency is Key**: All new components and features must match the existing visual style (TailwindCSS), animation style (`framer-motion`), and coding patterns (React hooks, component structure).
+- **No New Libraries without Cause**: Do not introduce new major libraries or frameworks (e.g., a different state manager, a different styling library) without a compelling, documented reason and ensuring it doesn't conflict with the existing stack.
+- **Follow the Leader**: Before writing any new code, inspect the existing, relevant files (`LandingPage.js`, `dashboard/page.js`, `Skeleton.js`, etc.) to understand and replicate the established patterns for state management, component structure, and animations.
+- **Animations**: All new animations should be implemented using `framer-motion` to maintain a consistent feel across the application.
+- **Loading States**: All new data-fetching operations must implement a proper loading state, preferably using the reusable `Skeleton` component or a button-specific animation as seen in the login/signup forms.
 
-## 2. File Architecture and Purpose
-
-The project is a monorepo with two distinct parts:
-
-### Backend (`/backend`)
-
-- **`main.py`**: This is the heart of the backend. It contains all the FastAPI API endpoints. The most recent changes involved updating the `/api/generate` and `/api/generate-bio` endpoints to accept a `template` parameter, which dynamically alters the prompt sent to the Groq AI.
-
-- **`models.py`**: Defines all data structures. The Pydantic models (`CoverLetterRequest`, `BioRequest`) are critical as they define the expected shape of API request bodies. I recently modified these to use a consistent `template` field instead of `tone` to standardize the API.
-
-- **`security.py` & `database.py`**: These files handle authentication logic (JWT) and database session management, respectively. They are stable and should not require frequent changes.
-
-### Frontend (`/frontend`)
-
-- **`app/page.js`**: This is the most important file on the frontend. It's a single, comprehensive client component that manages the state for the entire main application page. 
-    - **Why it was structured this way:** It controls the two main modes ("Cover Letter" and "Bio"), handles all user input fields, manages the generated output, and contains the API submission logic. While large, it centralizes the core application logic.
-    - **Your Task:** When modifying this file, pay close attention to the existing state variables and how they are passed down to the form components (`CoverLetterForm`, `BioForm`). The `makeAuthenticatedRequest` function is the standardized way to call the backend.
-
-- **`hooks/useSpeechRecognition.js`**: This is a new custom hook I created to implement the "Voice-to-Text" feature.
-    - **Why it was created:** To encapsulate the complex logic of using the browser's Speech Recognition API and keep the main `page.js` component cleaner. It manages listening state, transcripts, and browser support checks.
-    - **Your Task:** If you need to modify voice input behavior, start here. This hook is designed to be reusable.
-
-- **`context/AuthContext.js`**: A standard React context for managing the user's authentication status and JWT token globally.
-
-## 3. Rationale for Recent Changes
-
-- **Template Engine**: I implemented this to give users more control over the generated content's tone. The key was to standardize the API by using a single `template` field across all models and endpoints for consistency.
-
-- **Voice-to-Text Input**: This feature was added to improve accessibility and user experience. I chose to create a custom `useSpeechRecognition` hook to follow React best practices, promoting reusability and separation of concerns. The microphone buttons were added directly into the form components in `page.js`, and a new state `activeTextArea` was introduced to direct the transcribed text to the correct input field.
-
-## 4. STRICT COMMAND FOR THE NEXT AGENT
-
-**Adhere to the established patterns.** Before writing any code, you must first read and understand the relevant files (`main.py`, `app/page.js`, etc.).
-
-- **For Backend Changes:** Use Pydantic models for data validation and keep endpoint logic within `main.py`.
-- **For Frontend Changes:** Utilize the existing React hooks (`useState`, `useEffect`) and custom hooks (`useSpeechRecognition`). Maintain the centralized state management within `app/page.js`. Do not introduce new state management libraries (like Redux) or CSS frameworks (like Material-UI). Style changes should use the existing TailwindCSS utility classes.
-- **Consistency is Key:** Ensure any new code you add matches the style, structure, and conventions of the surrounding code.
+Adherence to these guidelines is critical for maintaining the project's quality, consistency, and long-term maintainability.

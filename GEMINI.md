@@ -18,9 +18,10 @@ The project is organized into a monorepo with two main directories:
 - **Framework:** FastAPI
 - **Database:** SQLModel with a PostgreSQL database.
 - **Authentication:** JWT-based authentication for user signup and login.
-- **Dependencies:** `fpdf2` for PDF generation.
+- **Dependencies:** `fpdf2` for PDF generation, `PyMuPDF` for reading PDF text, and `python-multipart` for file uploads.
 - **Core Functionality:**
     - Generates cover letters and LinkedIn bios using the Groq API.
+    - Provides an endpoint to parse PDF resumes and return an AI-generated summary.
     - Provides CRUD endpoints for managing user-generated content.
     - Provides an endpoint to download generated content as a PDF.
     - Includes a "Template Engine" to adjust the writing style of the generated content.
@@ -35,11 +36,13 @@ The project is organized into a monorepo with two main directories:
 
 - **Framework:** Next.js (React)
 - **Styling:** TailwindCSS
+- **Animation:** Framer Motion
 - **Authentication:** `AuthContext` is used to manage user authentication state across the application.
 - **Core Functionality:**
     - A landing page for new users.
     - User signup and login pages.
     - A main application page with two modes: "Cover Letter Generator" and "LinkedIn Bio Generator".
+    - "Resume Parsing & Autofill" allows users to upload a PDF resume, which is then summarized by an AI to automatically fill in their information.
     - A dashboard for users to view, search, sort, edit, and delete their saved content.
     - Allows users to download their generated content as a PDF.
     - "Voice-to-Text" input for dictating content into text fields.
@@ -50,7 +53,7 @@ The project is organized into a monorepo with two main directories:
     - `app/signup/page.js`: The signup page.
     - `context/AuthContext.js`: The authentication context provider.
     - `hooks/useSpeechRecognition.js`: A custom hook for the voice-to-text feature.
-    - `components/`: Contains reusable React components like the `Navbar` and `LandingPage`.
+    - `components/`: Contains reusable React components like the `Navbar`, `LandingPage`, and `Skeleton`.
     - `package.json`: Lists the Node.js dependencies and scripts.
 
 ## How to Run the Project
