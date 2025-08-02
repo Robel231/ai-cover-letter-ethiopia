@@ -1,6 +1,7 @@
 import os
 import logging
-from fastapi import FastAPI, HTTPException, Depends, Response
+from fastapi import FastAPI, HTTPException, Depends, Response, File, UploadFile
+import fitz  # PyMuPDF
 from fpdf import FPDF
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select
@@ -124,6 +125,53 @@ def generate_bio(request: BioRequest, current_user_email: str = Depends(get_curr
         max_tokens=512,
     )
     return {"bio": chat_completion.choices[0].message.content}
+
+@app.post("/api/parse-resume", tags=["AI Generation"])
+async def parse_resume(
+    resume: UploadFile = File(...),
+    current_user_email: str = Depends(get_current_user_email)
+):
+    if not resume.filename.lower().endswith('.pdf'):
+        raise HTTPException(status_code=400, detail="Invalid file type. Please upload a PDF.")
+
+    try:
+        resume_bytes = await resume.read()
+        pdf_document = fitz.open(stream=resume_bytes, filetype="pdf")
+        
+        raw_text = ""
+        for page_num in range(len(pdf_document)):
+            page = pdf_document.load_page(page_num)
+            raw_text += page.get_text()
+
+        if not raw_text.strip():
+            raise HTTPException(status_code=400, detail="Could not extract text from the PDF. The document might be empty or image-based.")
+
+        prompt = (
+            "You are an expert career assistant. The following text was extracted from a PDF resume. "
+            "Please read it and create a concise, well-formatted summary of the user's key skills, work experience, and education. "
+            "Use clear headings like 'Skills', 'Work Experience', and 'Education'. "
+            "Extract only the information present in the text."
+        )
+
+        chat_completion = groq_client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": raw_text}
+            ],
+            model="llama3-8b-8192",
+            temperature=0.5,
+            max_tokens=1024,
+        )
+        summary = chat_completion.choices[0].message.content
+        return {"summary": summary}
+
+    except Exception as e:
+        logging.exception("Failed to parse resume")
+        # Check for specific fitz error if it's a known issue
+        if "cannot open" in str(e).lower():
+             raise HTTPException(status_code=400, detail="Invalid or corrupted PDF file.")
+        raise HTTPException(status_code=500, detail=f"An error occurred while parsing the resume: {str(e)}")
+
 
 # ==========================================================
 # --- Protected Content CRUD Endpoints ---

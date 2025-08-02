@@ -15,6 +15,7 @@ This project solves a real pain point for job seekers browsing sites like EthioJ
 *   **Clean & Simple UI:** A beautiful, responsive interface that's easy to use.
 *   **Copy & Download:** Instantly copy the generated letter to your clipboard.
 *   **Bilingual Support:** Switch between English and Amharic for the user interface and generated output.
+*   **AI Resume Parser:** Upload your PDF resume to have an AI assistant instantly summarize your skills and experience, automatically filling out the form for you.
 
 ## 🛠️ Tech Stack
 

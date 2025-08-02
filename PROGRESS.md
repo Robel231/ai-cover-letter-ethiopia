@@ -39,6 +39,7 @@ This document tracks the tasks for building the AI Cover Letter Generator. It se
 - [x] **Frontend:** Dashboard for viewing, editing, and deleting saved content.
 - [x] **Template Engine:** Allow users to choose from different cover letter templates (e.g., "Formal", "Creative", "Tech Industry").
 - [x] **Voice-to-Text Input:** Use the browser's SpeechRecognition API for hands-free input.
+- [x] **Feature:** Implement AI-powered resume parsing (PDF upload) to autofill user information.
 
 
 ---
