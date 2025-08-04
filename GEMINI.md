@@ -4,7 +4,7 @@ This document provides a summary of the AI Cover Letter Ethiopia project for the
 
 ## Project Description
 
-This is a full-stack application designed to help users in the Ethiopian job market generate professional cover letters and LinkedIn bios. It uses a FastAPI backend and a Next.js frontend.
+This is a full-stack application designed to help users in the Ethiopian job market generate professional cover letters and LinkedIn bios. It uses a FastAPI backend and a Next.js frontend. The latest feature is a "CV Valuator" that analyzes a user's CV against a job description.
 
 ## Project Structure
 
@@ -13,48 +13,11 @@ The project is organized into a monorepo with two main directories:
 - `backend/`: A Python-based backend using the FastAPI framework.
 - `frontend/`: A JavaScript-based frontend using the Next.js framework.
 
-### Backend Details
+For a detailed technical handover, including architectural patterns and implementation rationale, please see [project_context.md](project_context.md).
 
-- **Framework:** FastAPI
-- **Database:** SQLModel with a PostgreSQL database.
-- **Authentication:** JWT-based authentication for user signup and login.
-- **Dependencies:** `fpdf2` for PDF generation, `PyMuPDF` for reading PDF text, and `python-multipart` for file uploads.
-- **Core Functionality:**
-    - Generates cover letters and LinkedIn bios using the Groq API.
-    - Provides an endpoint to parse PDF resumes and return an AI-generated summary.
-    - Provides CRUD endpoints for managing user-generated content.
-    - Provides an endpoint to download generated content as a PDF.
-    - Includes a "Template Engine" to adjust the writing style of the generated content.
-- **Key Files:**
-    - `main.py`: The main FastAPI application file containing API endpoints.
-    - `models.py`: Defines the database models (`User`, `GeneratedContent`) and Pydantic models for API requests/responses.
-    - `database.py`: Handles database connection and session management.
-    - `security.py`: Manages password hashing and JWT creation/verification.
-    - `requirements.txt`: Lists the Python dependencies.
+**Directive for the Next Agent:**
 
-### Frontend Details
-
-- **Framework:** Next.js (React)
-- **Styling:** TailwindCSS
-- **Animation:** Framer Motion
-- **Authentication:** `AuthContext` is used to manage user authentication state across the application.
-- **Core Functionality:**
-    - A landing page for new users.
-    - User signup and login pages.
-    - A main application page with two modes: "Cover Letter Generator" and "LinkedIn Bio Generator".
-    - "Resume Parsing & Autofill" allows users to upload a PDF resume, which is then summarized by an AI to automatically fill in their information.
-    - A dashboard for users to view, search, sort, edit, and delete their saved content.
-    - Allows users to download their generated content as a PDF.
-    - "Voice-to-Text" input for dictating content into text fields.
-- **Key Files:**
-    - `app/page.js`: The main page of the application.
-    - `app/dashboard/page.js`: The user dashboard.
-    - `app/login/page.js`: The login page.
-    - `app/signup/page.js`: The signup page.
-    - `context/AuthContext.js`: The authentication context provider.
-    - `hooks/useSpeechRecognition.js`: A custom hook for the voice-to-text feature.
-    - `components/`: Contains reusable React components like the `Navbar`, `LandingPage`, and `Skeleton`.
-    - `package.json`: Lists the Node.js dependencies and scripts.
+**You MUST strictly adhere to the existing architectural patterns, file structures, and coding styles of this project. Before implementing any new feature, you are required to analyze the existing code in `main.py`, `app/page.js`, and `models.py` to ensure your changes are consistent and idiomatic. Do not introduce new libraries or architectural patterns without explicit user instruction. Reuse existing components and services where possible.**
 
 ## How to Run the Project
 

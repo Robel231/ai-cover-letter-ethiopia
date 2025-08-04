@@ -7,21 +7,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select
 from typing import List
 from uuid import UUID
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-
-# --- Local Imports ---
 from database import get_session
 from models import (
     User, UserCreate, UserLogin,
-    CoverLetterRequest, BioRequest, ContentUpdate,
+    CoverLetterRequest, BioRequest, ContentUpdate, CvValuationRequest,
     GeneratedContent, GeneratedContentCreate, GeneratedContentResponse
 )
 from security import (
     get_password_hash, verify_password, create_access_token, get_current_user_email
 )
 from groq import Groq
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
 
 # --- App Initialization ---
 app = FastAPI(
@@ -47,10 +45,10 @@ app.add_middleware(
 def create_prompt(job_description: str, user_info: str, template: str) -> str:
     """Creates a detailed, high-quality prompt for the AI."""
     # --- DEBUGGING PRINTS ---
-    print(f"--- Creating Prompt ---")
+    print("--- Creating Prompt ---")
     print(f"Received Job Description (first 50 chars): {job_description[:50]}")
     print(f"Received User Info (first 50 chars): {user_info[:50]}")
-    print(f"-----------------------")
+    print("-----------------------")
     # --- END DEBUGGING ---
 
     # Base prompt
@@ -172,6 +170,41 @@ async def parse_resume(
              raise HTTPException(status_code=400, detail="Invalid or corrupted PDF file.")
         raise HTTPException(status_code=500, detail=f"An error occurred while parsing the resume: {str(e)}")
 
+
+@app.post("/api/valuate-cv", tags=["AI Generation"])
+def valuate_cv(request: CvValuationRequest, current_user_email: str = Depends(get_current_user_email)):
+    def create_cv_valuation_prompt(cv_text: str, job_description: str) -> str:
+        return f"""
+        Act as an expert technical recruiter and career coach. Analyze the following CV and Job Description.
+        Your task is to provide a structured analysis in a specific JSON format.
+        The final output MUST be a single, valid JSON object and nothing else.
+
+        1.  Calculate a "match score" percentage based on how well the CV aligns with the job requirements.
+        2.  Extract a list of key skills and keywords from the job description that are also present in the CV.
+        3.  Extract a list of important keywords from the job description that are MISSING from the CV.
+        4.  Provide a list of 2-3 actionable, high-level suggestions for improving the CV.
+
+        The JSON object must have the following keys: "matchScore" (integer), "matchedKeywords" (array of strings), "missingKeywords" (array of strings), and "suggestions" (array of strings).
+
+        ---
+        CV TEXT:
+        {cv_text}
+        ---
+        JOB DESCRIPTION TEXT:
+        {job_description}
+        ---
+
+        JSON OUTPUT:
+        """
+    prompt = create_cv_valuation_prompt(request.cv_text, request.job_description)
+    chat_completion = groq_client.chat.completions.create(
+        messages=[{"role": "user", "content": prompt}],
+        model="llama3-8b-8192",
+        temperature=0.2,
+        max_tokens=1024,
+        response_format={"type": "json_object"},
+    )
+    return chat_completion.choices[0].message.content
 
 # ==========================================================
 # --- Protected Content CRUD Endpoints ---

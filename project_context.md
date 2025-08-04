@@ -1,61 +1,45 @@
 # Project Context for AI Cover Letter Ethiopia
 
-This document provides essential context for the next developer agent continuing work on this project. It outlines the recent changes, the rationale behind them, and establishes clear guidelines for future development.
+This document provides a technical handover for the next developer agent. It outlines the project architecture, key files, and the rationale behind recent implementations.
 
-## Project State & Recent Developments
+## 1. Core Architecture & Patterns
 
-The project is a full-stack application with a FastAPI backend and a Next.js frontend. The core features are functionally complete. The most recent development cycle focused heavily on improving the User Experience (UX) and User Interface (UI) by adding professional, modern animations and loading states.
+The project is a full-stack monorepo application with a clear separation of concerns:
 
-The primary goal of these changes was to make the application feel more responsive, polished, and professional, reducing perceived loading times and providing better visual feedback to the user.
+*   **Backend (`/backend`):** A Python FastAPI application responsible for all business logic, database interactions, and secure communication with the Groq AI service.
+*   **Frontend (`/frontend`):** A JavaScript Next.js (React) application that serves as the user interface. It is a client-side rendered application that relies on the backend for all data and AI-powered features.
 
-## Key Files & Modifications
+**Key Architectural Principles:**
+*   **Stateless Backend:** The API is stateless, relying on JWT for authenticating user requests.
+*   **Service-Oriented Endpoints:** Each backend endpoint is designed to perform a single, specific task (e.g., parse a resume, generate a cover letter, valuate a CV).
+*   **Frontend Orchestration:** The frontend is responsible for orchestrating calls to multiple backend endpoints to create complex user features. The "CV Valuator" is a prime example of this pattern.
+*   **Centralized State Management:** The frontend uses React Context (`AuthContext`) for global state like authentication and component-level state (`useState`) for UI and data management within the main `app/page.js` component.
 
-### Core Technology Added
-- **`framer-motion`**: This library was added to the frontend dependencies (`frontend/package.json`) to handle all new animations. It was chosen for its power, ease of use, and integration with React.
+## 2. Key Files & Purpose
 
-### Components
-- **`frontend/components/Skeleton.js`**:
-    - **Purpose**: A new reusable component created to display a shimmering, animated placeholder.
-    - **Rationale**: This replaces jarring "Loading..." text with a visually appealing skeleton screen that mimics the layout of the content being loaded. This is a modern UX pattern that improves perceived performance. It is used in the dashboard.
+### Backend:
+*   `main.py`: The core of the backend. It contains all API endpoints, organized by function (Authentication, AI Generation, Content CRUD). All new backend features with an API endpoint should be added here.
+*   `models.py`: Defines all data structures. It uses `SQLModel` for database table schemas (e.g., `User`, `GeneratedContent`) and Pydantic `BaseModel` for API request/response validation (e.g., `CvValuationRequest`).
+*   `security.py`: Handles all authentication logic, including password hashing and JWT creation/verification.
 
-- **`frontend/components/LandingPage.js`**:
-    - **Purpose**: The public-facing landing page.
-    - **Modifications**:
-        - The content was updated to reflect the application's full feature set (Resume Parser, LinkedIn Bio Generator, etc.).
-        - Staggered entrance animations were added to the hero section and feature cards using `framer-motion`.
-    - **Rationale**: To make a stronger first impression on new users and clearly communicate the value proposition of the app.
+### Frontend:
+*   `app/page.js`: This is the main entry point for the user-facing application. It manages the application's `mode` (`coverLetter`, `bio`, `cvValuator`) and holds the state for all user inputs and API results. It's the primary file for integrating new high-level features.
+*   `components/`: This directory contains reusable React components.
+    *   `ValuationResult.js`: A presentational component created specifically to display the structured JSON report from the CV Valuator.
+*   `context/AuthContext.js`: A global state provider that manages the user's authentication token, making it available to all components that need to make authenticated API calls.
 
-### Application Pages
-- **`frontend/app/dashboard/page.js`**:
-    - **Purpose**: Displays the user's saved content.
-    - **Modifications**:
-        - The simple "Loading Dashboard..." text was replaced with the new `Skeleton` component, creating a skeleton layout of the dashboard grid.
-        - Staggered animations were added to the content cards so they animate into view gracefully.
-    - **Rationale**: To provide a seamless loading experience, preventing layout shifts and making the page feel faster.
+## 3. CV Valuator: Implementation Rationale
 
-- **`frontend/app/login/page.js` & `frontend/app/signup/page.js`**:
-    - **Purpose**: User authentication entry points.
-    - **Modifications**:
-        - The "Log In" and "Sign Up" buttons now have an animated loading state. When a user submits the form, the button text is replaced by three animating dots.
-    - **Rationale**: To provide clear visual feedback that the authentication request is in progress, preventing double-clicks and assuring the user that the system is working.
+The "CV Valuator" feature was implemented with a specific frontend orchestration pattern in mind to maintain backend simplicity and reusability.
 
-- **`frontend/app/page.js` (Generator Page)**:
-    - **Purpose**: The main application page for generating content.
-    - **Modifications**:
-        - The "Generate" buttons now have an animated spinner icon when `isLoading` is true.
-        - A `ResultSkeleton` loader is now displayed while waiting for the AI-generated content to arrive.
-    - **Rationale**: To provide immediate feedback for user actions and to fill the empty space during generation, making the wait feel more active and less frustrating.
+1.  **Reusing the `/api/parse-resume` Endpoint:** Instead of creating a new backend endpoint that accepts a PDF for valuation, the decision was made to reuse the existing `/api/parse-resume` endpoint.
+2.  **Frontend Logic:** The `handleCvUpload` function in `app/page.js` is triggered on file selection. It sends the PDF to `/api/parse-resume` and stores the returned text in the `extractedCvText` state variable.
+3.  **Final Valuation:** The `handleValuateCvSubmit` function then takes the `extractedCvText` and the job description text and sends them to the `/api/valuate-cv` endpoint.
+
+This approach keeps the backend APIs modular and single-purpose, while empowering the frontend to build more complex features by combining them.
 
 ---
 
-## ❗**Mandatory Directive for Future Development**❗
+## **Directive for the Next Agent**
 
-**The next agent MUST strictly adhere to the existing architecture, patterns, and libraries established in this project.**
-
-- **Consistency is Key**: All new components and features must match the existing visual style (TailwindCSS), animation style (`framer-motion`), and coding patterns (React hooks, component structure).
-- **No New Libraries without Cause**: Do not introduce new major libraries or frameworks (e.g., a different state manager, a different styling library) without a compelling, documented reason and ensuring it doesn't conflict with the existing stack.
-- **Follow the Leader**: Before writing any new code, inspect the existing, relevant files (`LandingPage.js`, `dashboard/page.js`, `Skeleton.js`, etc.) to understand and replicate the established patterns for state management, component structure, and animations.
-- **Animations**: All new animations should be implemented using `framer-motion` to maintain a consistent feel across the application.
-- **Loading States**: All new data-fetching operations must implement a proper loading state, preferably using the reusable `Skeleton` component or a button-specific animation as seen in the login/signup forms.
-
-Adherence to these guidelines is critical for maintaining the project's quality, consistency, and long-term maintainability.
+**You MUST strictly adhere to the existing architectural patterns, file structures, and coding styles of this project. Before implementing any new feature, you are required to analyze the existing code in `main.py`, `app/page.js`, and `models.py` to ensure your changes are consistent and idiomatic. Do not introduce new libraries or architectural patterns without explicit user instruction. Reuse existing components and services where possible.**

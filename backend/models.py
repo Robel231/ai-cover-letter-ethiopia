@@ -63,3 +63,7 @@ class GeneratedContentResponse(BaseModel):
 # THIS IS THE MISSING PIECE
 class ContentUpdate(BaseModel):
     title: str
+
+class CvValuationRequest(BaseModel):
+    cv_text: str
+    job_description: str

@@ -8,6 +8,7 @@ This project solves a real pain point for job seekers browsing sites like EthioJ
 
 ## ✨ Core Features (MVP)
 
+*   **AI-Powered CV Analysis:** Upload your CV as a PDF and paste a job description to get a detailed analysis. The AI provides a match score, identifies keyword alignment, and gives actionable suggestions to improve your chances.
 *   **Job Description Input:** Paste any job description from an Ethiopian job board.
 *   **Resume/Skills Input:** Paste your CV content or fill in key details like skills and experience.
 *   **AI-Powered Generation:** Uses the blazingly fast Groq API to craft a unique cover letter that matches your profile to the job's requirements.

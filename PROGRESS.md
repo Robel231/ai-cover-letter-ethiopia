@@ -44,6 +44,9 @@ This document tracks the tasks for building the AI Cover Letter Generator. It se
 ### Phase 3: Dashboard & User Experience Polish
 - [x] **UX/UI:** Implemented professional loading animations for all major actions (dashboard, forms, auth buttons).
 
+#### Phase 4: Advanced AI Features
+- [x] **Feature:** Built a CV Valuator to analyze a user's resume (via PDF upload) against a job description, providing a structured report with a match score, keyword analysis, and suggestions.
+
 ---
 
 ### 🚀 Future Roadmap (Post-Core)

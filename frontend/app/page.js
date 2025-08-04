@@ -9,6 +9,8 @@ import Skeleton from '@/components/Skeleton';
 import { translations } from './translations.js';
 import useSpeechRecognition from '../hooks/useSpeechRecognition';
 
+import ValuationResult from '@/components/ValuationResult';
+
 // --- Reusable Loading Spinner ---
 const LoadingSpinner = () => (
     <motion.svg
@@ -141,6 +143,40 @@ const BioForm = ({ t, userInfo, setUserInfo, template, setTemplate, handleSubmit
   </form>
 )};
 
+const CvValuatorForm = ({ t, jobDescription, setJobDescription, handleSubmit, isLoading, isUploading, handleCvUpload, cvFile }) => {
+    const fileInputRef = useRef(null);
+
+    return (
+        <form onSubmit={handleSubmit} className="space-y-6 animate-fade-in">
+            <div>
+                <label className="block text-sm font-medium leading-6 text-gray-300">{t.cvLabel || '1. Upload Your CV (PDF)'}</label>
+                <div className="mt-2">
+                    <input type="file" ref={fileInputRef} onChange={handleCvUpload} accept=".pdf" className="hidden" />
+                    <button type="button" onClick={() => fileInputRef.current.click()} disabled={isUploading} className="w-full justify-center rounded-md bg-white/10 px-3 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-white/20 disabled:opacity-50">
+                        {isUploading ? 'Uploading...' : '📤 Upload CV (PDF)'}
+                    </button>
+                    {cvFile && <p className="text-sm text-gray-400 mt-2">Uploaded: {cvFile.name}</p>}
+                </div>
+            </div>
+            <div>
+                <label htmlFor="jd-text" className="block text-sm font-medium leading-6 text-gray-300">{t.jdLabel || '2. Paste the Job Description'}</label>
+                <div className="mt-2">
+                    <textarea id="jd-text" rows={10} className="block w-full rounded-md border-0 bg-white/5 p-3 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500" placeholder={t.jdPlaceholder || 'Paste the job description here...'} value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} />
+                </div>
+            </div>
+            <button type="submit" disabled={isLoading || isUploading || !cvFile} className="flex w-full justify-center rounded-md bg-indigo-500 px-3 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-400 disabled:bg-gray-600 disabled:cursor-not-allowed">
+                {isLoading ? (
+                    <div className="flex items-center justify-center gap-2">
+                        <LoadingSpinner />
+                        <span>{t.valuatingButton || 'Analyzing...'}</span>
+                    </div>
+                ) : (t.valuateButton || 'Analyze My CV')}
+            </button>
+        </form>
+    );
+};
+
+
 // --- Main Page Component ---
 export default function Home() {
     const { isLoggedIn, token } = useAuth();
@@ -150,6 +186,9 @@ export default function Home() {
     const [template, setTemplate] = useState('Professional');
     const [generatedLetter, setGeneratedLetter] = useState('');
     const [generatedBio, setGeneratedBio] = useState('');
+    const [valuationResult, setValuationResult] = useState(null);
+    const [cvFile, setCvFile] = useState(null);
+    const [extractedCvText, setExtractedCvText] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [error, setError] = useState('');
@@ -177,6 +216,7 @@ export default function Home() {
         setError('');
         setGeneratedLetter('');
         setGeneratedBio('');
+        setValuationResult(null);
         setSaveSuccess('');
     };
 
@@ -263,6 +303,57 @@ export default function Home() {
         }
     };
 
+    const handleValuateCvSubmit = async (e) => {
+        e.preventDefault();
+        setIsLoading(true);
+        resetState();
+        try {
+            const data = await makeAuthenticatedRequest('/api/valuate-cv', {
+                cv_text: extractedCvText,
+                job_description: jobDescription,
+            });
+            if (data) setValuationResult(JSON.parse(data));
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleCvUpload = async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        setCvFile(file);
+        setIsUploading(true);
+        setError('');
+
+        const formData = new FormData();
+        formData.append('resume', file);
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/parse-resume`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: formData,
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.detail || 'Failed to parse resume.');
+            }
+
+            setExtractedCvText(data.summary);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
     const handleSaveContent = async () => {
         const contentToSave = mode === 'coverLetter' ? generatedLetter : generatedBio;
         const title = mode === 'coverLetter' ? `Cover Letter for ${jobDescription.substring(0, 30)}...` : `LinkedIn Bio (${new Date().toLocaleDateString()})`;
@@ -294,12 +385,28 @@ export default function Home() {
                             <button onClick={() => { setMode('bio'); resetState(); }} className={`py-2 px-4 text-sm font-medium transition-colors ${mode === 'bio' ? 'border-b-2 border-indigo-400 text-white' : 'text-gray-400 hover:text-white'}`}>
                                 {t.bioTitle || 'LinkedIn Bio Generator'}
                             </button>
+                            <button onClick={() => { setMode('cvValuator'); resetState(); }} className={`py-2 px-4 text-sm font-medium transition-colors ${mode === 'cvValuator' ? 'border-b-2 border-indigo-400 text-white' : 'text-gray-400 hover:text-white'}`}>
+                                {t.cvValuatorTitle || 'CV Valuator'}
+                            </button>
                         </div>
-                        {mode === 'coverLetter' ? <CoverLetterForm t={t} jobDescription={jobDescription} setJobDescription={setJobDescription} userInfo={userInfo} setUserInfo={setUserInfo} template={template} setTemplate={setTemplate} handleSubmit={handleCoverLetterSubmit} isLoading={isLoading} isUploading={isUploading} handleResumeUpload={handleResumeUpload} activeTextArea={activeTextArea} setActiveTextArea={setActiveTextArea} isListening={isListening} startListening={startListening} stopListening={stopListening} hasRecognitionSupport={hasRecognitionSupport} /> : <BioForm t={t} userInfo={userInfo} setUserInfo={setUserInfo} template={template} setTemplate={setTemplate} handleSubmit={handleBioSubmit} isLoading={isLoading} isUploading={isUploading} handleResumeUpload={handleResumeUpload} activeTextArea={activeTextArea} setActiveTextArea={setActiveTextArea} isListening={isListening} startListening={startListening} stopListening={stopListening} hasRecognitionSupport={hasRecognitionSupport} />}
+                        {mode === 'coverLetter' ? <CoverLetterForm t={t} jobDescription={jobDescription} setJobDescription={setJobDescription} userInfo={userInfo} setUserInfo={setUserInfo} template={template} setTemplate={setTemplate} handleSubmit={handleCoverLetterSubmit} isLoading={isLoading} isUploading={isUploading} handleResumeUpload={handleResumeUpload} activeTextArea={activeTextArea} setActiveTextArea={setActiveTextArea} isListening={isListening} startListening={startListening} stopListening={stopListening} hasRecognitionSupport={hasRecognitionSupport} /> : mode === 'bio' ? <BioForm t={t} userInfo={userInfo} setUserInfo={setUserInfo} template={template} setTemplate={setTemplate} handleSubmit={handleBioSubmit} isLoading={isLoading} isUploading={isUploading} handleResumeUpload={handleResumeUpload} activeTextArea={activeTextArea} setActiveTextArea={setActiveTextArea} isListening={isListening} startListening={startListening} stopListening={stopListening} hasRecognitionSupport={hasRecognitionSupport} /> : <CvValuatorForm t={t} jobDescription={jobDescription} setJobDescription={setJobDescription} handleSubmit={handleValuateCvSubmit} isLoading={isLoading} isUploading={isUploading} handleCvUpload={handleCvUpload} cvFile={cvFile} />}
                         {error && <div className="mt-4 rounded-md bg-red-900/50 p-3 text-sm text-red-300">{error}</div>}
                         {saveSuccess && <div className="mt-4 rounded-md bg-green-900/50 p-3 text-sm text-green-300">{saveSuccess}</div>}
                         
                         {isLoading && <ResultSkeleton />}
+
+                        <AnimatePresence>
+                            {!isLoading && valuationResult && (
+                                <motion.div
+                                    className="mt-10"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -20 }}
+                                >
+                                    <ValuationResult result={valuationResult} />
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
 
                         <AnimatePresence>
                             {!isLoading && (generatedLetter || generatedBio) && (
