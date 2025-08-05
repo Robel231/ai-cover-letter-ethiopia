@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { FaMagic, FaFileAlt, FaUserTie, FaCloudUploadAlt, FaWpforms, FaSignInAlt } from 'react-icons/fa';
+import { FaMagic, FaFileAlt, FaUserTie, FaCloudUploadAlt, FaWpforms, FaSignInAlt, FaSearchDollar } from 'react-icons/fa';
 import { FiUserPlus } from 'react-icons/fi';
 
 // Animation Variants
@@ -69,13 +69,13 @@ export default function LandingPage() {
                     className="text-5xl md:text-7xl font-extrabold mb-4 bg-gradient-to-r from-indigo-400 via-purple-500 to-pink-500 text-transparent bg-clip-text animate-gradient-x"
                     variants={itemVariants}
                 >
-                    The Ultimate AI Assistant for Ethiopian Job Seekers
+                    Your AI-Powered Career Co-Pilot
                 </motion.h1>
                 <motion.p 
                     className="text-lg md:text-xl text-gray-300 mb-8 max-w-3xl mx-auto"
                     variants={itemVariants}
                 >
-                    Instantly craft tailored Cover Letters, generate professional LinkedIn Bios, and autofill forms with our AI Resume Parser.
+                    Analyze your CV against any job description, generate tailored cover letters in seconds, and craft the perfect LinkedIn bio.
                 </motion.p>
                 <motion.div variants={itemVariants}>
                     <Link href="/signup" passHref>
@@ -100,18 +100,18 @@ export default function LandingPage() {
             >
                 <h2 className="text-3xl font-bold text-center mb-12">A Suite of AI-Powered Tools to Elevate Your Job Hunt</h2>
                 <motion.div 
-                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto px-4"
+                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 max-w-4xl mx-auto px-4"
                     variants={containerVariants}
                 >
+                    <FeatureCard 
+                        icon={<FaSearchDollar />} 
+                        title="AI CV Analysis" 
+                        description="Upload your CV and paste a job description to get an instant report. Our AI provides a match score, identifies keyword alignment, and gives you actionable suggestions to improve your resume." 
+                    />
                     <FeatureCard 
                         icon={<FaFileAlt />} 
                         title="AI Cover Letter Generator" 
                         description="Tailor your application to any job by generating a unique cover letter that highlights your matching skills." 
-                    />
-                    <FeatureCard 
-                        icon={<FaCloudUploadAlt />} 
-                        title="AI Resume Parser" 
-                        description="Save time and effort. Upload your PDF resume and let our AI instantly summarize and autofill your information." 
                     />
                     <FeatureCard 
                         icon={<FaUserTie />} 
@@ -119,9 +119,9 @@ export default function LandingPage() {
                         description="Craft a compelling and professional 'About' section for your LinkedIn profile in seconds." 
                     />
                     <FeatureCard 
-                        icon={<FaWpforms />} 
-                        title="Personal Dashboard" 
-                        description="All your generated content is automatically saved to a secure, personal dashboard where you can view, edit, and delete it anytime." 
+                        icon={<FaCloudUploadAlt />} 
+                        title="AI Resume Parser" 
+                        description="Save time and effort. Upload your PDF resume and let our AI instantly summarize and autofill your information." 
                     />
                 </motion.div>
             </motion.section>
@@ -141,18 +141,18 @@ export default function LandingPage() {
                 >
                     <HowItWorksStep 
                         icon={<FaSignInAlt />} 
-                        title="1. Sign Up" 
-                        description="Create your free account in seconds." 
-                    />
-                    <HowItWorksStep 
-                        icon={<FaCloudUploadAlt />} 
-                        title="2. Upload or Input" 
-                        description="Upload your resume or paste a job description." 
+                        title="Step 1: Upload or Input" 
+                        description="Create your free account and start by either uploading your PDF resume or pasting a job description." 
                     />
                     <HowItWorksStep 
                         icon={<FaMagic />} 
-                        title="3. Generate" 
-                        description="Instantly receive high-quality, AI-powered content." 
+                        title="Step 2: Analyze & Generate" 
+                        description="Leverage our AI to analyze your CV, generate tailored content, and get actionable feedback in seconds." 
+                    />
+                    <HowItWorksStep 
+                        icon={<FaUserTie />} 
+                        title="Step 3: Save & Succeed" 
+                        description="All your work is saved to a personal dashboard. Edit, download, and use your new content to land your next job." 
                     />
                  </motion.div>
             </motion.section>
