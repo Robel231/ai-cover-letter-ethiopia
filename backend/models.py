@@ -67,3 +67,28 @@ class ContentUpdate(BaseModel):
 class CvValuationRequest(BaseModel):
     cv_text: str
     job_description: str
+
+class Job(SQLModel, table=True):
+    __tablename__ = "jobs"
+
+    id: Optional[UUID] = Field(default=None, primary_key=True)
+    message_id: int = Field(unique=True, index=True)
+    channel_name: str
+    message_text: str
+    posted_at: datetime
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class JobResponse(BaseModel):
+    id: UUID
+    message_text: str
+    posted_at: datetime
+
+class JobMatchRequest(BaseModel):
+    cv_text: str
+
+class JobMatchResponse(BaseModel):
+    id: UUID
+    message_text: str
+    posted_at: datetime
+    match_score: int
+    match_summary: str

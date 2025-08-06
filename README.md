@@ -8,6 +8,7 @@ This project solves a real pain point for job seekers browsing sites like EthioJ
 
 ## ✨ Core Features (MVP)
 
+*   **AI Job Matcher:** Upload your CV and get a list of recent job postings from public channels, automatically scored and sorted by how well you match the requirements.
 *   **AI-Powered CV Analysis:** Upload your CV as a PDF and paste a job description to get a detailed analysis. The AI provides a match score, identifies keyword alignment, and gives actionable suggestions to improve your chances.
 *   **Job Description Input:** Paste any job description from an Ethiopian job board.
 *   **Resume/Skills Input:** Paste your CV content or fill in key details like skills and experience.

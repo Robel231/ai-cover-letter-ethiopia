@@ -1,5 +1,7 @@
 import os
 import logging
+import asyncio
+import json
 from fastapi import FastAPI, HTTPException, Depends, Response, File, UploadFile
 import fitz  # PyMuPDF
 from fpdf import FPDF
@@ -11,12 +13,13 @@ from database import get_session
 from models import (
     User, UserCreate, UserLogin,
     CoverLetterRequest, BioRequest, ContentUpdate, CvValuationRequest,
-    GeneratedContent, GeneratedContentCreate, GeneratedContentResponse
+    GeneratedContent, GeneratedContentCreate, GeneratedContentResponse,
+    Job, JobResponse, JobMatchRequest, JobMatchResponse
 )
 from security import (
     get_password_hash, verify_password, create_access_token, get_current_user_email
 )
-from groq import Groq
+from groq import AsyncGroq
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -28,7 +31,7 @@ app = FastAPI(
 )
 
 # Initialize Groq Client
-groq_client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+groq_client = AsyncGroq(api_key=os.environ.get("GROQ_API_KEY"))
 
 # --- CORS Middleware ---
 origins_regex = r"https://ai-cover-letter-ethiopia.*\.vercel\.app"
@@ -151,7 +154,7 @@ async def parse_resume(
             "Extract only the information present in the text."
         )
 
-        chat_completion = groq_client.chat.completions.create(
+        chat_completion = await groq_client.chat.completions.create(
             messages=[
                 {"role": "system", "content": prompt},
                 {"role": "user", "content": raw_text}
@@ -205,6 +208,78 @@ def valuate_cv(request: CvValuationRequest, current_user_email: str = Depends(ge
         response_format={"type": "json_object"},
     )
     return chat_completion.choices[0].message.content
+
+# ==========================================================
+# --- Job Feed Endpoint ---
+# ==========================================================
+@app.get("/api/jobs", response_model=List[JobResponse], tags=["Jobs"])
+def get_jobs(session: Session = Depends(get_session), current_user_email: str = Depends(get_current_user_email)):
+    statement = select(Job).order_by(Job.posted_at.desc()).limit(50)
+    jobs = session.exec(statement).all()
+    return jobs
+
+
+def create_job_match_prompt(cv_text: str, job_description: str) -> str:
+    return f"""
+    Act as an expert technical recruiter. Your task is to analyze the following CV against the Job Description and return a JSON object with your analysis.
+    The final output MUST be a single, valid JSON object and nothing else.
+
+    1.  Calculate a "match_score" from 0 to 100 based on how well the CV aligns with the job.
+    2.  Write a brief, one-sentence "match_summary" explaining the reason for your score (e.g., "Strong match in Python and data analysis, but lacks cloud experience.").
+
+    The JSON object must have these exact keys: "match_score" (integer) and "match_summary" (string).
+
+    ---
+    CV TEXT:
+    {cv_text}
+    ---
+    JOB DESCRIPTION:
+    {job_description}
+    ---
+
+    JSON OUTPUT:
+    """
+
+async def get_job_match_analysis(job: Job, cv_text: str) -> JobMatchResponse:
+    prompt = create_job_match_prompt(cv_text, job.message_text)
+    try:
+        chat_completion = await groq_client.chat.completions.create(
+            messages=[{"role": "user", "content": prompt}],
+            model="llama3-8b-8192",
+            temperature=0.2,
+            max_tokens=1024,
+            response_format={"type": "json_object"},
+        )
+        analysis = json.loads(chat_completion.choices[0].message.content)
+        return JobMatchResponse(
+            id=job.id,
+            message_text=job.message_text,
+            posted_at=job.posted_at,
+            match_score=analysis.get("match_score", 0),
+            match_summary=analysis.get("match_summary", "Could not analyze.")
+        )
+    except Exception as e:
+        logging.error(f"Error analyzing job {job.id}: {e}")
+        return JobMatchResponse(
+            id=job.id,
+            message_text=job.message_text,
+            posted_at=job.posted_at,
+            match_score=0,
+            match_summary="Error during analysis."
+        )
+
+@app.post("/api/match-jobs", response_model=List[JobMatchResponse], tags=["Jobs"])
+async def match_jobs(request: JobMatchRequest, session: Session = Depends(get_session), current_user_email: str = Depends(get_current_user_email)):
+    statement = select(Job).order_by(Job.posted_at.desc()).limit(50)
+    jobs = session.exec(statement).all()
+
+    tasks = [get_job_match_analysis(job, request.cv_text) for job in jobs]
+    matched_jobs = await asyncio.gather(*tasks)
+
+    # Sort by match score
+    sorted_jobs = sorted(matched_jobs, key=lambda j: j.match_score, reverse=True)
+    
+    return sorted_jobs
 
 # ==========================================================
 # --- Protected Content CRUD Endpoints ---

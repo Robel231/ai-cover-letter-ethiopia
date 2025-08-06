@@ -1,48 +1,26 @@
-# Gemini Project Overview
+# Gemini CLI Interaction Log: Telegram Scraper Feature
 
-This document provides a summary of the AI Cover Letter Ethiopia project for the Gemini agent.
+## Objective
+Build a backend worker to scrape job listings from the "freelance_ethio" Telegram channel and save them to the Supabase database.
 
-## Project Description
+### Key Interaction 1: Initial Scaffolding
+- **Prompt:** Asked to create the database schema for a `jobs` table, scaffold a `worker/` directory with `scraper.py` and `config.py`, and populate the files with initial logic for connecting to Telegram and the database.
+- **Outcome:** Generated SQL and Python code.
 
-This is a full-stack application designed to help users in the Ethiopian job market generate professional cover letters and LinkedIn bios. It uses a FastAPI backend and a Next.js frontend. The latest feature is a "CV Valuator" that analyzes a user's CV against a job description.
+### Key Interaction 2: Debugging `NoSuchTableError`
+- **Problem:** The script failed because the `jobs` table didn't exist in the database.
+- **Prompt:** Asked the CLI to provide the clean SQL command again.
+- **Outcome:** Provided the correct `CREATE TABLE` statement, which was then executed successfully in the Supabase dashboard.
 
-## Project Structure
+### Key Interaction 3: Debugging `ArgumentError: got None`
+- **Problem:** The scraper script failed to load the `DATABASE_URL` from the `.env` file due to an unreliable relative path.
+- **Prompt:** Instructed the CLI to modify `worker/config.py` to use `pathlib` to construct a robust, absolute path to the `.env` file.
+- **Outcome:** The fix was applied correctly, and the configuration loaded successfully.
 
-The project is organized into a monorepo with two main directories:
+### Key Interaction 4: Debugging `ModuleNotFoundError: No module named 'worker'`
+- **Problem:** The script failed because of an incorrect package-style import (`from worker.config...`).
+- **Prompt:** Instructed the CLI to change the import to a direct relative import (`from config...`).
+- **Outcome:** The fix was applied, and the script's import logic now works correctly.
 
-- `backend/`: A Python-based backend using the FastAPI framework.
-- `frontend/`: A JavaScript-based frontend using the Next.js framework.
-
-For a detailed technical handover, including architectural patterns and implementation rationale, please see [project_context.md](project_context.md).
-
-**Directive for the Next Agent:**
-
-**You MUST strictly adhere to the existing architectural patterns, file structures, and coding styles of this project. Before implementing any new feature, you are required to analyze the existing code in `main.py`, `app/page.js`, and `models.py` to ensure your changes are consistent and idiomatic. Do not introduce new libraries or architectural patterns without explicit user instruction. Reuse existing components and services where possible.**
-
-## How to Run the Project
-
-### Backend
-
-1.  Navigate to the `backend` directory.
-2.  Create a virtual environment: `python -m venv venv`
-3.  Activate the virtual environment: `source venv/bin/activate` (on Linux/macOS) or `venv\Scripts\activate` (on Windows).
-4.  Install dependencies: `pip install -r requirements.txt`
-5.  Create a `.env` file and add the following environment variables:
-    ```
-    DATABASE_URL="postgresql://user:password@host:port/database"
-    SECRET_KEY="your_secret_key"
-    ALGORITHM="HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES=30
-    GROQ_API_KEY="your_groq_api_key"
-    ```
-6.  Run the development server: `uvicorn main:app --reload`
-
-### Frontend
-
-1.  Navigate to the `frontend` directory.
-2.  Install dependencies: `npm install`
-3.  Create a `.env.local` file and add the following environment variable:
-    ```
-    NEXT_PUBLIC_API_URL="https://ai-cover-letter-backend.onrender.com"
-    ```
-4.  Run the development server: `npm run dev`
+### Current Status
+- The scraper script is fully coded but is currently stuck at the initial Telethon client login step. The next action is to debug why the Telegram login code is not being received.
