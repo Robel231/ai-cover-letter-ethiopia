@@ -319,6 +319,7 @@ async def get_job_match_analysis(job: Job, cv_text: str) -> JobMatchResponse:
             response_format={"type": "json_object"},
         )
         analysis = json.loads(chat_completion.choices[0].message.content)
+        await asyncio.sleep(1.5) # Add delay to respect rate limit
         return JobMatchResponse(
             id=job.id,
             message_text=job.message_text,
