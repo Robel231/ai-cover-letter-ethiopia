@@ -47,6 +47,7 @@ This document tracks the tasks for building the AI Cover Letter Generator. It se
 #### Phase 4: Advanced AI Features
 - [x] **Feature:** Built a CV Valuator to analyze a user's resume (via PDF upload) against a job description, providing a structured report with a match score, keyword analysis, and suggestions.
 - [x] **Feature:** Built an AI Job Matcher that scrapes jobs from Telegram, saves them to a database, and compares them against a user's uploaded CV to provide a sorted list of best matches with AI-generated scores.
+- [x] **Feature:** Built a full-cycle AI Interview Coach that generates tailored questions and provides interactive, AI-powered feedback on spoken answers.
 
 ---
 

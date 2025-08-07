@@ -12,7 +12,7 @@ from uuid import UUID
 from database import get_session
 from models import (
     User, UserCreate, UserLogin,
-    CoverLetterRequest, BioRequest, ContentUpdate, CvValuationRequest,
+    CoverLetterRequest, BioRequest, ContentUpdate, CvValuationRequest, InterviewQuestionRequest, InterviewAnswerRequest,
     GeneratedContent, GeneratedContentCreate, GeneratedContentResponse,
     Job, JobResponse, JobMatchRequest, JobMatchResponse
 )
@@ -106,9 +106,9 @@ def login(form_data: UserLogin, session: Session = Depends(get_session)):
 # --- Protected AI Generation Endpoints ---
 # ==========================================================
 @app.post("/api/generate", tags=["AI Generation"])
-def generate_cover_letter(request: CoverLetterRequest, current_user_email: str = Depends(get_current_user_email)):
+async def generate_cover_letter(request: CoverLetterRequest, current_user_email: str = Depends(get_current_user_email)):
     prompt = create_prompt(request.job_description, request.user_info, request.template)
-    chat_completion = groq_client.chat.completions.create(
+    chat_completion = await groq_client.chat.completions.create(
         messages=[{"role": "user", "content": prompt}],
         model="llama3-8b-8192",
         temperature=0.7,
@@ -117,9 +117,9 @@ def generate_cover_letter(request: CoverLetterRequest, current_user_email: str =
     return {"cover_letter": chat_completion.choices[0].message.content}
 
 @app.post("/api/generate-bio", tags=["AI Generation"])
-def generate_bio(request: BioRequest, current_user_email: str = Depends(get_current_user_email)):
+async def generate_bio(request: BioRequest, current_user_email: str = Depends(get_current_user_email)):
     prompt = create_bio_prompt(request.user_info, request.template)
-    chat_completion = groq_client.chat.completions.create(
+    chat_completion = await groq_client.chat.completions.create(
         messages=[{"role": "user", "content": prompt}],
         model="llama3-8b-8192",
         temperature=0.8,
@@ -175,7 +175,7 @@ async def parse_resume(
 
 
 @app.post("/api/valuate-cv", tags=["AI Generation"])
-def valuate_cv(request: CvValuationRequest, current_user_email: str = Depends(get_current_user_email)):
+async def valuate_cv(request: CvValuationRequest, current_user_email: str = Depends(get_current_user_email)):
     def create_cv_valuation_prompt(cv_text: str, job_description: str) -> str:
         return f"""
         Act as an expert technical recruiter and career coach. Analyze the following CV and Job Description.
@@ -200,7 +200,7 @@ def valuate_cv(request: CvValuationRequest, current_user_email: str = Depends(ge
         JSON OUTPUT:
         """
     prompt = create_cv_valuation_prompt(request.cv_text, request.job_description)
-    chat_completion = groq_client.chat.completions.create(
+    chat_completion = await groq_client.chat.completions.create(
         messages=[{"role": "user", "content": prompt}],
         model="llama3-8b-8192",
         temperature=0.2,
@@ -208,6 +208,74 @@ def valuate_cv(request: CvValuationRequest, current_user_email: str = Depends(ge
         response_format={"type": "json_object"},
     )
     return chat_completion.choices[0].message.content
+
+@app.post("/api/generate-interview-questions", tags=["AI Generation"])
+async def generate_interview_questions(request: InterviewQuestionRequest, current_user_email: str = Depends(get_current_user_email)):
+    def create_question_generation_prompt(cv_text: str, job_description: str) -> str:
+        return f"""
+        Act as an expert hiring manager and technical interviewer for a major tech company.
+        Your task is to analyze the provided CV and Job Description and generate a list of 5 to 7 highly probable and insightful interview questions.
+        The final output MUST be a single, valid JSON object and nothing else.
+
+        - Generate a mix of behavioral questions, technical questions, and project-specific questions.
+        - The questions must be tailored to the specific skills mentioned in both the CV and the job description.
+        - For example, if the CV mentions "API optimization" and the job requires "scalable systems", a good question would be "Describe a time you had to diagnose and improve a slow API endpoint."
+
+        The JSON object must have a single key, "questions", which holds an array of the generated question strings.
+
+        ---
+        CV TEXT:
+        {cv_text}
+        ---
+        JOB DESCRIPTION:
+        {job_description}
+        ---
+
+        JSON OUTPUT:
+        """
+    prompt = create_question_generation_prompt(request.cv_text, request.job_description)
+    chat_completion = await groq_client.chat.completions.create(
+        messages=[{"role": "user", "content": prompt}],
+        model="llama3-8b-8192",
+        temperature=0.4,
+        max_tokens=1024,
+        response_format={"type": "json_object"},
+    )
+    return json.loads(chat_completion.choices[0].message.content)
+
+@app.post("/api/analyze-interview-answer", tags=["AI Generation"])
+async def analyze_interview_answer(request: InterviewAnswerRequest, current_user_email: str = Depends(get_current_user_email)):
+    def create_answer_feedback_prompt(question: str, answer: str) -> str:
+        return f"""
+        Act as a world-class interview coach providing feedback on a user's answer to an interview question.
+        Your task is to provide a structured analysis in a specific JSON format.
+        The final output MUST be a single, valid JSON object and nothing else.
+
+        1.  Provide a "positive_feedback" point: Start with something encouraging.
+        2.  Provide a "constructive_feedback" point: Offer a clear, actionable suggestion for improvement.
+        3.  Provide an "example_improvement" string: Give a short example of how they could rephrase part of their answer.
+
+        The JSON object must have these exact keys: "positive_feedback" (string), "constructive_feedback" (string), and "example_improvement" (string).
+
+        ---
+        INTERVIEW QUESTION:
+        {question}
+        ---
+        USER'S ANSWER:
+        {answer}
+        ---
+
+        JSON FEEDBACK OUTPUT:
+        """
+    prompt = create_answer_feedback_prompt(request.question, request.answer)
+    chat_completion = await groq_client.chat.completions.create(
+        messages=[{"role": "user", "content": prompt}],
+        model="llama3-8b-8192",
+        temperature=0.3,
+        max_tokens=1024,
+        response_format={"type": "json_object"},
+    )
+    return json.loads(chat_completion.choices[0].message.content)
 
 # ==========================================================
 # --- Job Feed Endpoint ---
@@ -290,7 +358,11 @@ def save_content(content_data: GeneratedContentCreate, session: Session = Depend
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    new_content = GeneratedContent.model_validate(content_data, update={"user_id": user.id})
+    new_content = GeneratedContent.model_validate(content_data, update={
+        "user_id": user.id,
+        "original_cv_text": content_data.original_cv_text,
+        "original_job_description": content_data.original_job_description
+    })
     session.add(new_content)
     session.commit()
     session.refresh(new_content)
@@ -305,6 +377,25 @@ def get_user_content(session: Session = Depends(get_session), current_user_email
     statement = select(GeneratedContent).where(GeneratedContent.user_id == user.id).order_by(GeneratedContent.created_at.desc())
     content_list = session.exec(statement).all()
     return content_list
+
+@app.get("/api/content/{content_id}", response_model=GeneratedContentResponse, tags=["Content"])
+def get_single_content_item(
+    content_id: UUID,
+    session: Session = Depends(get_session),
+    current_user_email: str = Depends(get_current_user_email)
+):
+    user = session.exec(select(User).where(User.email == current_user_email)).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    content_item = session.get(GeneratedContent, content_id)
+    if not content_item:
+        raise HTTPException(status_code=404, detail="Content not found")
+    
+    if content_item.user_id != user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to view this content")
+
+    return content_item
 
 @app.patch("/api/content/{content_id}", response_model=GeneratedContentResponse, tags=["Content"])
 def update_content_title(

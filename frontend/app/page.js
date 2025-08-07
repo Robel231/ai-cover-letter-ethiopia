@@ -359,12 +359,20 @@ export default function Home() {
         const title = mode === 'coverLetter' ? `Cover Letter for ${jobDescription.substring(0, 30)}...` : `LinkedIn Bio (${new Date().toLocaleDateString()})`;
         setSaveSuccess('');
         setError('');
+
+        const body = {
+            content_type: mode,
+            title: title,
+            content: contentToSave,
+        };
+
+        if (mode === 'coverLetter') {
+            body.original_cv_text = userInfo;
+            body.original_job_description = jobDescription;
+        }
+
         try {
-            await makeAuthenticatedRequest('/api/content', {
-                content_type: mode,
-                title: title,
-                content: contentToSave,
-            });
+            await makeAuthenticatedRequest('/api/content', body);
             setSaveSuccess("Saved successfully!");
         } catch (err) {
             setError("Failed to save content. " + err.message);

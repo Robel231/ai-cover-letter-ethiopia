@@ -23,6 +23,8 @@ class GeneratedContent(SQLModel, table=True):
     title: str = Field(default="Untitled")
     content: str
     created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
+    original_cv_text: Optional[str] = None
+    original_job_description: Optional[str] = None
 
 
 # --- Pydantic Models (for API requests/responses) ---
@@ -52,6 +54,8 @@ class GeneratedContentCreate(BaseModel):
     content_type: str
     title: str
     content: str
+    original_cv_text: Optional[str] = None
+    original_job_description: Optional[str] = None
 
 class GeneratedContentResponse(BaseModel):
     id: UUID
@@ -59,6 +63,8 @@ class GeneratedContentResponse(BaseModel):
     title: str
     content: str
     created_at: datetime
+    original_cv_text: Optional[str] = None
+    original_job_description: Optional[str] = None
 
 # THIS IS THE MISSING PIECE
 class ContentUpdate(BaseModel):
@@ -92,3 +98,11 @@ class JobMatchResponse(BaseModel):
     posted_at: datetime
     match_score: int
     match_summary: str
+
+class InterviewQuestionRequest(BaseModel):
+    cv_text: str
+    job_description: str
+
+class InterviewAnswerRequest(BaseModel):
+    question: str
+    answer: str
