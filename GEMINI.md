@@ -24,3 +24,33 @@ Build a backend worker to scrape job listings from the "freelance_ethio" Telegra
 
 ### Current Status
 - The scraper script is fully coded but is currently stuck at the initial Telethon client login step. The next action is to debug why the Telegram login code is not being received.
+---
+## Objective: Build the "AI Interview Coach" Feature
+
+### Key Interaction 1: Backend Scaffolding (Question Generation)
+- **Prompt:** Asked to create a new protected endpoint `/api/generate-interview-questions` that takes a CV and job description and uses a specialized AI prompt to return a JSON object containing an array of tailored interview questions.
+- **Outcome:** Successfully created the new Pydantic models and the FastAPI endpoint.
+
+### Key Interaction 2: Frontend Scaffolding (UI Page)
+- **Prompt:** Instructed to create a new dynamic page at `/interview-coach/[contentId]`, protect it, and have it fetch the necessary data to call the new question generation endpoint and display the results. Also requested a button on the dashboard modal to link to this page.
+- **Outcome:** Created the new page but initially failed to add the button to the dashboard, which was corrected in a subsequent step.
+
+### Key Interaction 3: Debugging `async/await` Bug
+- **Problem:** Encountered an `AttributeError: 'coroutine' object has no attribute 'choices'` in older endpoints.
+- **Prompt:** Instructed to audit all AI-related endpoints in `main.py` and ensure they were all defined with `async def` and used the `await` keyword for the Groq API call.
+- **Outcome:** The bug was successfully fixed across all endpoints.
+
+### Key Interaction 4: Debugging Data Flow (`405` and Logical Errors)
+- **Problem:** The interview coach page failed, first with a `405 Method Not Allowed` and then with a logical error about missing job descriptions.
+- **Prompt:** Diagnosed the need for a `GET /api/content/{content_id}` endpoint and a data structure change to save original CV/JD text. Instructed the CLI to add the new endpoint and modify the database schema and save-logic accordingly.
+- **Outcome:** Successfully implemented the new endpoint and data structure, fixing the flow.
+
+### Key Interaction 5: Building the Interactive Feedback Loop
+- **Prompt:** Instructed to build the final part of the coach: a new endpoint `/api/analyze-interview-answer` to provide JSON-formatted feedback, and to integrate the `useSpeechRecognition` hook on the frontend for an interactive experience.
+- **Outcome:** Successfully implemented the full, interactive mock interview feature.
+
+### Key Interaction 6: Solving API Rate Limiting (`429 Error`)
+- **Problem:** The powerful "Job Matcher" feature was hitting the Groq API's TPM rate limit.
+- **Prompt:** Instructed to add a small `asyncio.sleep(1.5)` delay inside the job matching loop in `main.py` to gracefully handle the rate limit.
+- **Outcome:** The fix was successfully implemented, solving the scaling issue.
+---
