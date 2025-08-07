@@ -2,7 +2,6 @@
 
 Tired of writing cover letters? This tool uses AI to write professional, tailored cover letters instantly, specifically for jobs in the Ethiopian market.
 
-![Demo GIF Placeholder](https://placehold.co/800x400/2d3748/ffffff?text=Add+a+GIF+Demo+Here)
 
 This project solves a real pain point for job seekers browsing sites like EthioJobs, Dereja, and The Reporter. It takes the tedious, time-consuming task of writing a cover letter and automates it, producing high-quality results in seconds.
 
