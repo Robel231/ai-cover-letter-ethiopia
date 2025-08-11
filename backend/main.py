@@ -39,11 +39,9 @@ def read_root():
 groq_client = AsyncGroq(api_key=os.environ.get("GROQ_API_KEY"))
 
 # --- CORS Middleware ---
-origins_regex = r"https://ai-cover-letter-ethiopia.*\\.vercel\\.app"
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
-    allow_origin_regex=origins_regex,
+    allow_origins=["*"],  # Allow all origins
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
