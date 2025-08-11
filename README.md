@@ -15,7 +15,9 @@ This project solves a real pain point for job seekers browsing sites like EthioJ
 *   **AI-Powered Generation:** Uses the blazingly fast Groq API to craft a unique cover letter that matches your profile to the job's requirements.
 *   **Voice-to-Text Input:** Dictate your resume details or job descriptions directly into the text fields using your microphone.
 *   **Clean & Simple UI:** A beautiful, responsive interface that's easy to use.
-*   **Copy & Download:** Instantly copy the generated letter to your clipboard.
+*   **User Authentication:** Secure sign-up and login to save and manage your generated content.
+*   **⚡️ **Credit System:** Users receive free credits upon signup to use on the AI features, with a clear display of their remaining balance.
+*   **Copy & Download:** Instantly copy the generated letter to your clipboard or download it as a PDF.
 *   **Bilingual Support:** Switch between English and Amharic for the user interface and generated output.
 *   **AI Resume Parser:** Upload your PDF resume to have an AI assistant instantly summarize your skills and experience, automatically filling out the form for you.
 

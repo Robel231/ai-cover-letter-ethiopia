@@ -230,6 +230,12 @@ export default function Home() {
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify(body),
         });
+
+        if (response.status === 403) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || "You have run out of credits. Please upgrade for more.");
+        }
+
         const data = await response.json();
         if (!response.ok) throw new Error(data.detail || "An API error occurred.");
         return data;

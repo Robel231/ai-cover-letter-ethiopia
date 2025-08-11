@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 
 export default function Navbar() {
-    const { isLoggedIn, logout } = useAuth();
+    const { isLoggedIn, logout, user } = useAuth();
     const router = useRouter();
 
     const handleLogout = () => {
@@ -25,6 +25,12 @@ export default function Navbar() {
                     <div className="flex items-center space-x-4">
                         {isLoggedIn ? (
                             <>
+                                {user && (
+                                    <div className="flex items-center gap-2 bg-gray-700 px-3 py-1 rounded-full text-sm">
+                                        <span>⚡️</span>
+                                        <span>{user.credits} Credits</span>
+                                    </div>
+                                )}
                                 <Link href="/dashboard" className="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
                                     Dashboard
                                 </Link>

@@ -12,6 +12,7 @@ class User(SQLModel, table=True):
     id: Optional[UUID] = Field(default_factory=uuid4, primary_key=True)
     email: str = Field(unique=True, index=True)
     hashed_password: str
+    credits: int
     created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
 
 class GeneratedContent(SQLModel, table=True):
@@ -38,6 +39,13 @@ class UserCreate(BaseModel):
 class UserLogin(BaseModel):
     email: str
     password: str
+
+
+class UserResponse(BaseModel):
+    id: UUID
+    email: str
+    credits: int
+
 
 # --- AI Generation ---
 class CoverLetterRequest(BaseModel):

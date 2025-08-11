@@ -2,7 +2,7 @@ import os
 import logging
 import asyncio
 import json
-from fastapi import FastAPI, HTTPException, Depends, Response, File, UploadFile
+from fastapi import FastAPI, HTTPException, Depends, Response, File, UploadFile, BackgroundTasks
 import fitz  # PyMuPDF
 from fpdf import FPDF
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,7 +11,7 @@ from typing import List
 from uuid import UUID
 from database import get_session
 from models import (
-    User, UserCreate, UserLogin,
+    User, UserCreate, UserLogin, UserResponse,
     CoverLetterRequest, BioRequest, ContentUpdate, CvValuationRequest, InterviewQuestionRequest, InterviewAnswerRequest,
     GeneratedContent, GeneratedContentCreate, GeneratedContentResponse,
     Job, JobResponse, JobMatchRequest, JobMatchResponse
@@ -20,6 +20,7 @@ from security import (
     get_password_hash, verify_password, create_access_token, get_current_user_email
 )
 from groq import AsyncGroq
+from email_service import send_welcome_email
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -34,7 +35,7 @@ app = FastAPI(
 groq_client = AsyncGroq(api_key=os.environ.get("GROQ_API_KEY"))
 
 # --- CORS Middleware ---
-origins_regex = r"https://ai-cover-letter-ethiopia.*\.vercel\.app"
+origins_regex = r"https://ai-cover-letter-ethiopia.*\\.vercel\\.app"
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
@@ -43,6 +44,25 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# --- Credit Management Helper ---
+def check_and_deduct_credit(user_email: str, session: Session):
+    """
+    Checks if a user has enough credits and deducts one if they do.
+    Raises HTTPException if the user has no credits or is not found.
+    """
+    user = session.exec(select(User).where(User.email == user_email)).first()
+    if not user:
+        # This case should ideally not be hit if the user is authenticated
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if user.credits <= 0:
+        raise HTTPException(status_code=403, detail="You have run out of credits. Please upgrade to continue.")
+
+    user.credits -= 1
+    session.add(user)
+    session.commit()
+    session.refresh(user)
 
 # --- AI Prompt Helpers ---
 def create_prompt(job_description: str, user_info: str, template: str) -> str:
@@ -80,17 +100,21 @@ def create_bio_prompt(user_info: str, template: str) -> str:
 # --- Authentication Endpoints ---
 # ==========================================================
 @app.post("/api/signup", tags=["Authentication"])
-def signup(user_create: UserCreate, session: Session = Depends(get_session)):
+def signup(user_create: UserCreate, background_tasks: BackgroundTasks, session: Session = Depends(get_session)):
     statement = select(User).where(User.email == user_create.email)
     existing_user = session.exec(statement).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
 
     hashed_password = get_password_hash(user_create.password)
-    new_user = User(email=user_create.email, hashed_password=hashed_password)
+    new_user = User(email=user_create.email, hashed_password=hashed_password, credits=20)
     session.add(new_user)
     session.commit()
     session.refresh(new_user)
+
+    # Send welcome email in the background
+    # background_tasks.add_task(send_welcome_email, to_email=new_user.email)
+
     return {"message": "User created successfully", "user_id": new_user.id}
 
 @app.post("/api/login", tags=["Authentication"])
@@ -103,10 +127,24 @@ def login(form_data: UserLogin, session: Session = Depends(get_session)):
     return {"access_token": access_token, "token_type": "bearer"}
 
 # ==========================================================
+# --- User Profile Endpoint ---
+# ==========================================================
+@app.get("/api/users/me", response_model=UserResponse, tags=["Users"])
+def get_user_me(current_user_email: str = Depends(get_current_user_email), session: Session = Depends(get_session)):
+    """
+    Fetches the profile of the currently authenticated user, including credit balance.
+    """
+    user = session.exec(select(User).where(User.email == current_user_email)).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+# ==========================================================
 # --- Protected AI Generation Endpoints ---
 # ==========================================================
 @app.post("/api/generate", tags=["AI Generation"])
-async def generate_cover_letter(request: CoverLetterRequest, current_user_email: str = Depends(get_current_user_email)):
+async def generate_cover_letter(request: CoverLetterRequest, session: Session = Depends(get_session), current_user_email: str = Depends(get_current_user_email)):
+    check_and_deduct_credit(current_user_email, session)
     prompt = create_prompt(request.job_description, request.user_info, request.template)
     chat_completion = await groq_client.chat.completions.create(
         messages=[{"role": "user", "content": prompt}],
@@ -117,7 +155,8 @@ async def generate_cover_letter(request: CoverLetterRequest, current_user_email:
     return {"cover_letter": chat_completion.choices[0].message.content}
 
 @app.post("/api/generate-bio", tags=["AI Generation"])
-async def generate_bio(request: BioRequest, current_user_email: str = Depends(get_current_user_email)):
+async def generate_bio(request: BioRequest, session: Session = Depends(get_session), current_user_email: str = Depends(get_current_user_email)):
+    check_and_deduct_credit(current_user_email, session)
     prompt = create_bio_prompt(request.user_info, request.template)
     chat_completion = await groq_client.chat.completions.create(
         messages=[{"role": "user", "content": prompt}],
@@ -130,8 +169,10 @@ async def generate_bio(request: BioRequest, current_user_email: str = Depends(ge
 @app.post("/api/parse-resume", tags=["AI Generation"])
 async def parse_resume(
     resume: UploadFile = File(...),
+    session: Session = Depends(get_session),
     current_user_email: str = Depends(get_current_user_email)
 ):
+    check_and_deduct_credit(current_user_email, session)
     if not resume.filename.lower().endswith('.pdf'):
         raise HTTPException(status_code=400, detail="Invalid file type. Please upload a PDF.")
 
@@ -175,7 +216,8 @@ async def parse_resume(
 
 
 @app.post("/api/valuate-cv", tags=["AI Generation"])
-async def valuate_cv(request: CvValuationRequest, current_user_email: str = Depends(get_current_user_email)):
+async def valuate_cv(request: CvValuationRequest, session: Session = Depends(get_session), current_user_email: str = Depends(get_current_user_email)):
+    check_and_deduct_credit(current_user_email, session)
     def create_cv_valuation_prompt(cv_text: str, job_description: str) -> str:
         return f"""
         Act as an expert technical recruiter and career coach. Analyze the following CV and Job Description.
@@ -210,7 +252,8 @@ async def valuate_cv(request: CvValuationRequest, current_user_email: str = Depe
     return chat_completion.choices[0].message.content
 
 @app.post("/api/generate-interview-questions", tags=["AI Generation"])
-async def generate_interview_questions(request: InterviewQuestionRequest, current_user_email: str = Depends(get_current_user_email)):
+async def generate_interview_questions(request: InterviewQuestionRequest, session: Session = Depends(get_session), current_user_email: str = Depends(get_current_user_email)):
+    check_and_deduct_credit(current_user_email, session)
     def create_question_generation_prompt(cv_text: str, job_description: str) -> str:
         return f"""
         Act as an expert hiring manager and technical interviewer for a major tech company.
@@ -244,7 +287,8 @@ async def generate_interview_questions(request: InterviewQuestionRequest, curren
     return json.loads(chat_completion.choices[0].message.content)
 
 @app.post("/api/analyze-interview-answer", tags=["AI Generation"])
-async def analyze_interview_answer(request: InterviewAnswerRequest, current_user_email: str = Depends(get_current_user_email)):
+async def analyze_interview_answer(request: InterviewAnswerRequest, session: Session = Depends(get_session), current_user_email: str = Depends(get_current_user_email)):
+    check_and_deduct_credit(current_user_email, session)
     def create_answer_feedback_prompt(question: str, answer: str) -> str:
         return f"""
         Act as a world-class interview coach providing feedback on a user's answer to an interview question.
@@ -339,6 +383,7 @@ async def get_job_match_analysis(job: Job, cv_text: str) -> JobMatchResponse:
 
 @app.post("/api/match-jobs", response_model=List[JobMatchResponse], tags=["Jobs"])
 async def match_jobs(request: JobMatchRequest, session: Session = Depends(get_session), current_user_email: str = Depends(get_current_user_email)):
+    check_and_deduct_credit(current_user_email, session)
     statement = select(Job).order_by(Job.posted_at.desc()).limit(50)
     jobs = session.exec(statement).all()
 
