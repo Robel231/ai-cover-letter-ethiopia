@@ -54,3 +54,14 @@ Build a backend worker to scrape job listings from the "freelance_ethio" Telegra
 - **Prompt:** Instructed to add a small `asyncio.sleep(1.5)` delay inside the job matching loop in `main.py` to gracefully handle the rate limit.
 - **Outcome:** The fix was successfully implemented, solving the scaling issue.
 ---
+## Recent Interactions (August 11, 2025)
+
+### Telegram Scraper Automation & Robustness
+- **Action:** Added logging and error handling to `backend/worker/scraper.py` for improved robustness and operational feedback.
+- **Action:** Temporarily replaced `backend/worker/scraper.py` with a minimal login script to force a new Telegram session file creation, addressing the "User is not authorized" error.
+- **Action:** Reverted `backend/worker/scraper.py` back to its full, robust version after the session file was successfully created.
+
+### Backend API Health Check & CORS Fixes
+- **Action:** Added a `GET /` endpoint to `backend/main.py` for health checks, returning `{"status": "ok", "message": "Welcome to the AI Job Tools API!"}`. This addresses `404 Not Found` errors for the root URL.
+- **Action:** Temporarily opened CORS (`allow_origins=["*"], allow_origin_regex` removed) in `backend/main.py` for debugging purposes to diagnose persistent `400 Bad Request` (CORS) errors.
+- **Action:** Reverted the CORS configuration in `backend/main.py` back to the secure version using `allow_origins=["http://localhost:3000"]` and `allow_origin_regex=r"https://ai-cover-letter-ethiopia.*\.vercel\.app"` after debugging confirmed the regex was correct.
