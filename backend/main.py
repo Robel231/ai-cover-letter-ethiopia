@@ -31,6 +31,10 @@ app = FastAPI(
     description="API for AI Cover Letter and Bio Generation with User Authentication."
 )
 
+@app.get("/", tags=["Health Check"])
+def read_root():
+    return {"status": "ok", "message": "Welcome to the AI Job Tools API!"}
+
 # Initialize Groq Client
 groq_client = AsyncGroq(api_key=os.environ.get("GROQ_API_KEY"))
 
