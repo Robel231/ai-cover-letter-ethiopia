@@ -210,7 +210,7 @@ export default function Home() {
     }, [transcript, activeTextArea]);
 
     const t = translations['en'] || {};
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ai-cover-letter-backend.onrender.com';
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
     const resetState = () => {
         setError('');
