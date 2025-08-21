@@ -1,13 +1,10 @@
--- Enable Row-Level Security (RLS) for critical tables
--- This ensures that access to rows is governed by security policies.
+
 
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.generated_content ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.jobs ENABLE ROW LEVEL SECURITY;
 
--- Drop existing policies to ensure a clean slate (optional but recommended)
--- Note: If policies with these names don't exist, these commands will error.
--- You can run them selectively or ignore errors if you know the state.
+
 DROP POLICY IF EXISTS "Allow individual user access to their own record" ON public.users;
 DROP POLICY IF EXISTS "Allow individual user to update their own record" ON public.users;
 DROP POLICY IF EXISTS "Allow individual user to insert their own content" ON public.generated_content;

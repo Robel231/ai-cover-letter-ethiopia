@@ -1,0 +1,4 @@
+backend/supabase_fix_new_user_trigger.sql
+backend/supabase_new_user_trigger.sql
+backend/supabase_rls_policies.sql
+supabase_reset_auth_trigger.sql
