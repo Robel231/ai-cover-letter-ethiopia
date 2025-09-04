@@ -38,6 +38,35 @@ def read_root():
 # Initialize Groq Client
 groq_client = AsyncGroq(api_key=os.environ.get("GROQ_API_KEY"))
 
+def get_active_model():
+    """
+    Fetches the list of available models from Groq and returns the best available one
+    based on a predefined priority list.
+    """
+    try:
+        # This is a priority list, from most desired to least desired.
+        PREFERRED_MODELS = [
+            "llama-3.1-70b-versatile", # The newest, if available
+            "llama3-70b-8192",         # The standard large Llama3
+            "mixtral-8x7b-32768",      # The stable Mixtral
+            "gemma-7b-it"              # A smaller, reliable fallback
+        ]
+
+        available_models = groq_client.models.list().data
+        available_model_ids = {model.id for model in available_models} # Use a set for fast lookups
+
+        for model in PREFERRED_MODELS:
+            if model in available_model_ids:
+                print(f"Found active model: {model}")
+                return model
+        
+        # If no preferred models are found, raise an error.
+        raise RuntimeError("No suitable active models found on Groq.")
+    except Exception as e:
+        print(f"Could not fetch or determine active model: {e}")
+        # Fallback to a historically stable model as a last resort
+        return "gemma-7b-it"
+
 # --- CORS Middleware ---
 origins_regex = r"https://ai-cover-letter-ethiopia.*\.vercel\.app"
 
@@ -151,9 +180,10 @@ def get_user_me(current_user_email: str = Depends(get_current_user_email), sessi
 async def generate_cover_letter(request: CoverLetterRequest, session: Session = Depends(get_session), current_user_email: str = Depends(get_current_user_email)):
     check_and_deduct_credit(current_user_email, session)
     prompt = create_prompt(request.job_description, request.user_info, request.template)
+    active_model = get_active_model()
     chat_completion = await groq_client.chat.completions.create(
         messages=[{"role": "user", "content": prompt}],
-        model="mixtral-8x7b-32768",
+        model=active_model,
         temperature=0.7,
         max_tokens=1024,
     )
@@ -163,9 +193,10 @@ async def generate_cover_letter(request: CoverLetterRequest, session: Session = 
 async def generate_bio(request: BioRequest, session: Session = Depends(get_session), current_user_email: str = Depends(get_current_user_email)):
     check_and_deduct_credit(current_user_email, session)
     prompt = create_bio_prompt(request.user_info, request.template)
+    active_model = get_active_model()
     chat_completion = await groq_client.chat.completions.create(
         messages=[{"role": "user", "content": prompt}],
-        model="mixtral-8x7b-32768",
+        model=active_model,
         temperature=0.8,
         max_tokens=512,
     )
@@ -200,12 +231,13 @@ async def parse_resume(
             "Extract only the information present in the text."
         )
 
+        active_model = get_active_model()
         chat_completion = await groq_client.chat.completions.create(
             messages=[
                 {"role": "system", "content": prompt},
                 {"role": "user", "content": raw_text}
             ],
-            model="mixtral-8x7b-32768",
+            model=active_model,
             temperature=0.5,
             max_tokens=1024,
         )
@@ -247,9 +279,10 @@ async def valuate_cv(request: CvValuationRequest, session: Session = Depends(get
         JSON OUTPUT:
         """
     prompt = create_cv_valuation_prompt(request.cv_text, request.job_description)
+    active_model = get_active_model()
     chat_completion = await groq_client.chat.completions.create(
         messages=[{"role": "user", "content": prompt}],
-        model="mixtral-8x7b-32768",
+        model=active_model,
         temperature=0.2,
         max_tokens=1024,
         response_format={"type": "json_object"},
@@ -282,9 +315,10 @@ async def generate_interview_questions(request: InterviewQuestionRequest, sessio
         JSON OUTPUT:
         """
     prompt = create_question_generation_prompt(request.cv_text, request.job_description)
+    active_model = get_active_model()
     chat_completion = await groq_client.chat.completions.create(
         messages=[{"role": "user", "content": prompt}],
-        model="mixtral-8x7b-32768",
+        model=active_model,
         temperature=0.4,
         max_tokens=1024,
         response_format={"type": "json_object"},
@@ -317,9 +351,10 @@ async def analyze_interview_answer(request: InterviewAnswerRequest, session: Ses
         JSON FEEDBACK OUTPUT:
         """
     prompt = create_answer_feedback_prompt(request.question, request.answer)
+    active_model = get_active_model()
     chat_completion = await groq_client.chat.completions.create(
         messages=[{"role": "user", "content": prompt}],
-        model="mixtral-8x7b-32768",
+        model=active_model,
         temperature=0.3,
         max_tokens=1024,
         response_format={"type": "json_object"},
@@ -360,9 +395,10 @@ def create_job_match_prompt(cv_text: str, job_description: str) -> str:
 async def get_job_match_analysis(job: Job, cv_text: str) -> JobMatchResponse:
     prompt = create_job_match_prompt(cv_text, job.message_text)
     try:
+        active_model = get_active_model()
         chat_completion = await groq_client.chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
-            model="mixtral-8x7b-32768",
+            model=active_model,
             temperature=0.2,
             max_tokens=1024,
             response_format={"type": "json_object"},
