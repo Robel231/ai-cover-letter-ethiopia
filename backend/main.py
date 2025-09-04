@@ -153,7 +153,7 @@ async def generate_cover_letter(request: CoverLetterRequest, session: Session = 
     prompt = create_prompt(request.job_description, request.user_info, request.template)
     chat_completion = await groq_client.chat.completions.create(
         messages=[{"role": "user", "content": prompt}],
-        model="llama-3.1-70b-versatile",
+        model="llama3-70b-8192",
         temperature=0.7,
         max_tokens=1024,
     )
@@ -165,7 +165,7 @@ async def generate_bio(request: BioRequest, session: Session = Depends(get_sessi
     prompt = create_bio_prompt(request.user_info, request.template)
     chat_completion = await groq_client.chat.completions.create(
         messages=[{"role": "user", "content": prompt}],
-        model="llama-3.1-70b-versatile",
+        model="llama3-70b-8192",
         temperature=0.8,
         max_tokens=512,
     )
@@ -205,7 +205,7 @@ async def parse_resume(
                 {"role": "system", "content": prompt},
                 {"role": "user", "content": raw_text}
             ],
-            model="llama-3.1-70b-versatile",
+            model="llama3-70b-8192",
             temperature=0.5,
             max_tokens=1024,
         )
@@ -249,7 +249,7 @@ async def valuate_cv(request: CvValuationRequest, session: Session = Depends(get
     prompt = create_cv_valuation_prompt(request.cv_text, request.job_description)
     chat_completion = await groq_client.chat.completions.create(
         messages=[{"role": "user", "content": prompt}],
-        model="llama-3.1-70b-versatile",
+        model="llama3-70b-8192",
         temperature=0.2,
         max_tokens=1024,
         response_format={"type": "json_object"},
@@ -284,7 +284,7 @@ async def generate_interview_questions(request: InterviewQuestionRequest, sessio
     prompt = create_question_generation_prompt(request.cv_text, request.job_description)
     chat_completion = await groq_client.chat.completions.create(
         messages=[{"role": "user", "content": prompt}],
-        model="llama-3.1-70b-versatile",
+        model="llama3-70b-8192",
         temperature=0.4,
         max_tokens=1024,
         response_format={"type": "json_object"},
@@ -319,7 +319,7 @@ async def analyze_interview_answer(request: InterviewAnswerRequest, session: Ses
     prompt = create_answer_feedback_prompt(request.question, request.answer)
     chat_completion = await groq_client.chat.completions.create(
         messages=[{"role": "user", "content": prompt}],
-        model="llama-3.1-70b-versatile",
+        model="llama3-70b-8192",
         temperature=0.3,
         max_tokens=1024,
         response_format={"type": "json_object"},
@@ -362,7 +362,7 @@ async def get_job_match_analysis(job: Job, cv_text: str) -> JobMatchResponse:
     try:
         chat_completion = await groq_client.chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
-            model="llama-3.1-70b-versatile",
+            model="llama3-70b-8192",
             temperature=0.2,
             max_tokens=1024,
             response_format={"type": "json_object"},
